@@ -9,9 +9,9 @@ require_once 'phpmailer/Exception.php';
  *
  * @package Notice
  * @author <strong style="color:#28B7FF;font-family: 楷体;">Rainshaw</strong>
- * @version 0.1.0
- * @link
- * @dependence 17.11.15-*
+ * @version 0.2.0
+ * @link https://github.com/RainshawGao
+ * @dependence 18.10.23
  */
 class Notice_Plugin implements Typecho_Plugin_Interface
 {
@@ -29,6 +29,7 @@ class Notice_Plugin implements Typecho_Plugin_Interface
         Typecho_Plugin::factory('Widget_Comments_Edit')->finishComment = array(__CLASS__, 'requestService');
         Typecho_Plugin::factory('Widget_Comments_Edit')->mark = array(__CLASS__, 'approvedMail');
         Typecho_Plugin::factory('Widget_Service')->sendSC = array(__CLASS__, 'sendSC');
+        Typecho_Plugin::factory('Widget_Service')->sendQmsg = array(__CLASS__, 'sendQmsg');
         Typecho_Plugin::factory('Widget_Service')->sendMail = array(__CLASS__, 'sendMail');
         Typecho_Plugin::factory('Widget_Service')->sendApprovedMail = array(__CLASS__, 'sendApprovedMail');
 
@@ -69,7 +70,11 @@ class Notice_Plugin implements Typecho_Plugin_Interface
     public static function config(Typecho_Widget_Helper_Form $form)
     {
         $setting = new Typecho_Widget_Helper_Form_Element_Checkbox('setting',
-            array('serverchan' => '启用Server酱', 'mail' => '启用邮件'),
+            array(
+                'serverchan' => '启用Server酱',
+                'mail' => '启用邮件',
+                'qmsg' => '启用Qmsg酱'
+            ),
             NULL, '启用设置', _t('请选择您要启用的通知方式。'));
         $form->addInput($setting->multiMode());
 
@@ -77,6 +82,15 @@ class Notice_Plugin implements Typecho_Plugin_Interface
             _t('想要获取 SCKEY 则需要在 <a href="https://sc.ftqq.com/">Server酱</a> 使用 Github 账户登录<br>
                 同时，注册后需要在 <a href="http://sc.ftqq.com/">Server酱</a> 绑定你的微信号才能收到推送'));
         $form->addInput($scKey);
+
+        $QmsgKey = new Typecho_Widget_Helper_Form_Element_Text('QmsgKey', NULL, NULL, _t('QmsgKey'),
+            _t('请进入 <a href="https://qmsg.zendee.cn/api">Qmsg酱文档</a> 获取您的 KEY: https://qmsg.zendee.cn:443/send/{QmsgKey}'));
+        $form->addInput($QmsgKey);
+
+        $QmsgQQ = new Typecho_Widget_Helper_Form_Element_Text('QmsgQQ', NULL, NULL, _t('QmsgQQ'),
+            _t('请进入 <a href="https://qmsg.zendee.cn/me">Qmsg酱</a> 选择机器人QQ号，使用您接收通知的QQ号添加其为好友，并将该QQ号添加到该页面下方QQ号列表中<br/>
+                如果您有多个应用，且在该网站上增加了许多QQ号，您可以在这里填写本站点推送的QQ号（用英文逗号分割，最后不需要加逗号），不填则向该网站列表中所有的QQ号发送消息'));
+        $form->addInput($QmsgQQ);
 
         $host = new Typecho_Widget_Helper_Form_Element_Text('host', NULL, '',
             _t('邮件服务器地址'), _t('请填写 SMTP 服务器地址'));
@@ -159,6 +173,11 @@ class Notice_Plugin implements Typecho_Plugin_Interface
                 return _t('请填写SCKEY');
             }
         }
+        if (in_array('qmsg', $settings['setting'])) {
+            if (empty($settings['QmsgKey'])) {
+                return _t('请填写QmsgKEY');
+            }
+        }
         if (in_array('mail', $settings['setting'])) {
             if (empty($settings['host'])) {
                 return _t('请填写SMTP服务器地址');
@@ -188,7 +207,7 @@ class Notice_Plugin implements Typecho_Plugin_Interface
     }
 
     /**
-     * 评论回调
+     * 评论通知回调
      *
      * @access public
      * @param $comment
@@ -205,69 +224,27 @@ class Notice_Plugin implements Typecho_Plugin_Interface
         if (in_array('serverchan', $options->setting) && !empty($options->scKey)) {
             Helper::requestService('sendSC', $comment->coid);
         }
+        if (in_array('qmsg', $options->setting) && !empty($options->QmsgKey)) {
+            Helper::requestService('sendQmsg', $comment->coid);
+        }
     }
 
     /**
-     * 评论回调
+     * 审核通过评论回掉
      *
      * @access public
      * @param $comment
+     * @param $edit
+     * @param string $status
      * @return void
-     * @throws Typecho_Plugin_Exception
      * @throws Typecho_Db_Exception
      */
     public static function approvedMail($comment, $edit, $status)
     {
         if ('approved' === $status) {
-            self::log($comment['coid'],0,0);
+            self::log($comment['coid'], 0, 0);
             Helper::requestService('sendApprovedMail', $comment['coid']);
-            self::log($comment['coid'],1,1);
-        }
-    }
-
-    /**
-     * 数据库初始化
-     *
-     * @access private
-     * @return string
-     * @throws Typecho_Plugin_Exception
-     * @throws Typecho_Db_Exception
-     */
-    private static function dbInstall()
-    {
-        $db = Typecho_Db::get();
-        $prefix = $db->getPrefix();
-        $type = explode('_', $db->getAdapterName());
-        $type = array_pop($type);
-        if ($type != 'Mysql' and $type != 'SQLite') {
-            throw new Typecho_Plugin_Exception('暂不支持当前数据库版本' . $type);
-        }
-        $scripts = file_get_contents('usr/plugins/Notice/scripts/' . $type . '.sql');
-        $scripts = str_replace('typecho_', $prefix, $scripts);
-        $scripts = str_replace('%charset%', 'utf8mb4', $scripts);
-        $scripts = explode(';', $scripts);
-        try {
-            foreach ($scripts as $script) {
-                $script = trim($script);
-                if ($script) {
-                    $db->query($script, Typecho_Db::WRITE);
-                }
-            }
-            return '建立邮件队列数据表，插件启用成功!';
-        } catch (Typecho_Db_Exception $e) {
-            $code = $e->getCode();
-            if (('Mysql' == $type && 1050 == $code) ||
-                ('SQLite' == $type && ('HY000' == $code || 1 == $code))) {
-                try {
-                    $script = 'SELECT `id`, `coid`, `type`, `log` FROM `' . $prefix . 'notice`';
-                    $db->query($script, Typecho_Db::READ);
-                    return '检测到邮件队列数据表，插件启用成功!';
-                } catch (Typecho_Db_Exception $e) {
-                    throw new Typecho_Plugin_Exception('数据表检测失败，插件启用失败。错误号：' . $e->getCode());
-                }
-            } else {
-                throw new Typecho_Plugin_Exception('数据表建立失败，插件启用失败。错误号：' . $code);
-            }
+            self::log($comment['coid'], 1, 1);
         }
     }
 
@@ -298,7 +275,9 @@ class Notice_Plugin implements Typecho_Plugin_Interface
         $postdata = http_build_query(
             array(
                 'text' => "有人在您的博客发表了评论",
-                'desp' => "**" . $comment->author . "** 在你的博客中说到：\n\n > " . $comment->text
+                'desp' => '评论人：**' . $comment->author . '**' . PHP_EOL
+                    . '评论内容:'. PHP_EOL . $comment->text . PHP_EOL
+                    . '链接：' . $comment->permalink
             )
         );
 
@@ -313,6 +292,64 @@ class Notice_Plugin implements Typecho_Plugin_Interface
         $result = file_get_contents('https://sc.ftqq.com/' . $key . '.send', false, $context);
 
         self::log($coid, 'wechat', $result);
+    }
+
+    /**
+     * 异步发送微信 Powered By Server酱
+     *
+     * @param integer $coid 评论ID
+     * @return void
+     * @throws Typecho_Db_Exception
+     * @throws Typecho_Plugin_Exception
+     * @access public
+     */
+    public static function sendQmsg($coid)
+    {
+        $options = Helper::options();
+        $pluginOptions = $options->plugin('Notice');
+        $comment = Helper::widgetById('comments', $coid);
+        if (empty($pluginOptions->QmsgKey)) {
+            return;
+        }
+        $key = $pluginOptions->QmsgKey;
+        if (!$comment->have() || empty($comment->mail)) {
+            return;
+        }
+        if ($comment->authorId == 1) {
+            return;
+        }
+
+        $param = '标题：' . $comment->title . PHP_EOL
+            . '评论人：' . $comment->author . PHP_EOL
+            . '评论内容:'. PHP_EOL . $comment->text . PHP_EOL
+            . '链接：' . $comment->permalink;
+
+        if ($pluginOptions->QmsgQQ == NULL) {
+            $postdata = http_build_query(
+                array(
+                    'msg' => $param
+                )
+            );
+        } else {
+            $postdata = http_build_query(
+                array(
+                    'msg' => $param,
+                    'qq' => $pluginOptions->QmsgQQ
+                )
+            );
+        }
+
+        $opts = array('http' =>
+            array(
+                'method' => 'POST',
+                'header' => 'Content-type: application/x-www-form-urlencoded',
+                'content' => $postdata
+            )
+        );
+        $context = stream_context_create($opts);
+        $result = file_get_contents('https://qmsg.zendee.cn/send/' . $key, false, $context);
+
+        self::log($coid, 'qq', $param.$result);
     }
 
     /**
@@ -370,7 +407,7 @@ class Notice_Plugin implements Typecho_Plugin_Interface
         $pluginOptions = $options->plugin('Notice');
         $comment = Helper::widgetById('comments', $coid);
 
-        if (!in_array('mail', $pluginOptions->setting)){
+        if (!in_array('mail', $pluginOptions->setting)) {
             return;
         }
 
@@ -449,7 +486,7 @@ class Notice_Plugin implements Typecho_Plugin_Interface
         $pluginOptions = $options->plugin('Notice');
         $comment = Helper::widgetById('comments', $coid);
 
-        if (!in_array('mail', $pluginOptions->setting)){
+        if (!in_array('mail', $pluginOptions->setting)) {
             return;
         }
 
@@ -496,7 +533,7 @@ class Notice_Plugin implements Typecho_Plugin_Interface
         $date = new Typecho_Date();
         $time = $date->format('Y-m-d H:i:s');
         $parent = $comment;
-        if($comment->parent) {
+        if ($comment->parent) {
             $parent = Helper::widgetById('comments', $comment->parent);
         }
         $status = array(
@@ -533,6 +570,52 @@ class Notice_Plugin implements Typecho_Plugin_Interface
             $status[$comment->status]
         );
         return str_replace($search, $replace, $str);
+    }
+
+    /**
+     * 数据库初始化
+     *
+     * @access private
+     * @return string
+     * @throws Typecho_Plugin_Exception
+     * @throws Typecho_Db_Exception
+     */
+    private static function dbInstall()
+    {
+        $db = Typecho_Db::get();
+        $prefix = $db->getPrefix();
+        $type = explode('_', $db->getAdapterName());
+        $type = array_pop($type);
+        if ($type != 'Mysql' and $type != 'SQLite') {
+            throw new Typecho_Plugin_Exception('暂不支持当前数据库版本' . $type);
+        }
+        $scripts = file_get_contents('usr/plugins/Notice/scripts/' . $type . '.sql');
+        $scripts = str_replace('typecho_', $prefix, $scripts);
+        $scripts = str_replace('%charset%', 'utf8mb4', $scripts);
+        $scripts = explode(';', $scripts);
+        try {
+            foreach ($scripts as $script) {
+                $script = trim($script);
+                if ($script) {
+                    $db->query($script, Typecho_Db::WRITE);
+                }
+            }
+            return '建立邮件队列数据表，插件启用成功!';
+        } catch (Typecho_Db_Exception $e) {
+            $code = $e->getCode();
+            if (('Mysql' == $type && 1050 == $code) ||
+                ('SQLite' == $type && ('HY000' == $code || 1 == $code))) {
+                try {
+                    $script = 'SELECT `id`, `coid`, `type`, `log` FROM `' . $prefix . 'notice`';
+                    $db->query($script, Typecho_Db::READ);
+                    return '检测到邮件队列数据表，插件启用成功!';
+                } catch (Typecho_Db_Exception $e) {
+                    throw new Typecho_Plugin_Exception('数据表检测失败，插件启用失败。错误号：' . $e->getCode());
+                }
+            } else {
+                throw new Typecho_Plugin_Exception('数据表建立失败，插件启用失败。错误号：' . $code);
+            }
+        }
     }
 
     /**

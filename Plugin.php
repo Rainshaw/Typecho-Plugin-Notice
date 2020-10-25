@@ -9,7 +9,7 @@ require_once 'phpmailer/Exception.php';
  *
  * @package Notice
  * @author <strong style="color:#28B7FF;font-family: 楷体;">Rainshaw</strong>
- * @version 0.2.1
+ * @version 0.2.2
  * @link https://github.com/RainshawGao
  * @dependence 18.10.23
  */
@@ -69,6 +69,10 @@ class Notice_Plugin implements Typecho_Plugin_Interface
      */
     public static function config(Typecho_Widget_Helper_Form $form)
     {
+        $serviceTitle = new Typecho_Widget_Helper_Layout('div', array('class=' => 'typecho-page-title'));
+        $serviceTitle->html('<h1>推送服务配置</h1>');
+        $form->addItem($serviceTitle);
+
         $setting = new Typecho_Widget_Helper_Form_Element_Checkbox('setting',
             array(
                 'serverchan' => '启用Server酱',
@@ -78,7 +82,19 @@ class Notice_Plugin implements Typecho_Plugin_Interface
             NULL, '启用设置', _t('请选择您要启用的通知方式。'));
         $form->addInput($setting->multiMode());
 
+        $delDB = new Typecho_Widget_Helper_Form_Element_Radio('delDB',
+            array(
+                '1' => '是',
+                '0' => '否'
+            ), '0', _t('卸载插件时删除数据库'),
+            _t('取消勾选则表示当您禁用此插件时，插件的历史记录仍将存留在数据库中。'));
+        $form->addInput($delDB);
+
         // Server 酱
+        $serviceTitle = new Typecho_Widget_Helper_Layout('div', array('class=' => 'typecho-page-title'));
+        $serviceTitle->html('<h2><a href="http://sc.ftqq.com/">Server酱</a>配置</h2>');
+        $form->addItem($serviceTitle);
+
         $scKey = new Typecho_Widget_Helper_Form_Element_Text('scKey', NULL, NULL, _t('Server酱SCKEY'),
             _t('想要获取 SCKEY 则需要在 <a href="https://sc.ftqq.com/">Server酱</a> 使用 Github 账户登录<br>
                 同时，注册后需要在 <a href="http://sc.ftqq.com/">Server酱</a> 绑定你的微信号才能收到推送'));
@@ -91,6 +107,10 @@ class Notice_Plugin implements Typecho_Plugin_Interface
         $form->addInput($scMsg);
 
         // Qmsg 酱
+        $serviceTitle = new Typecho_Widget_Helper_Layout('div', array('class=' => 'typecho-page-title'));
+        $serviceTitle->html('<h2><a href="https://qmsg.zendee.cn/">Qmsg酱</a>配置</h2>');
+        $form->addItem($serviceTitle);
+
         $QmsgKey = new Typecho_Widget_Helper_Form_Element_Text('QmsgKey', NULL, NULL, _t('QmsgKey'),
             _t('请进入 <a href="https://qmsg.zendee.cn/api">Qmsg酱文档</a> 获取您的 KEY: https://qmsg.zendee.cn:443/send/{QmsgKey}'));
         $form->addInput($QmsgKey);
@@ -107,6 +127,9 @@ class Notice_Plugin implements Typecho_Plugin_Interface
         $form->addInput($QmsgMsg);
 
         // SMTP
+        $serviceTitle = new Typecho_Widget_Helper_Layout('div', array('class=' => 'typecho-page-title'));
+        $serviceTitle->html('<h2>SMTP配置</h2>');
+        $form->addItem($serviceTitle);
         $host = new Typecho_Widget_Helper_Form_Element_Text('host', NULL, '',
             _t('邮件服务器地址'), _t('请填写 SMTP 服务器地址'));
         $form->addInput($host);
@@ -130,7 +153,7 @@ class Notice_Plugin implements Typecho_Plugin_Interface
         $form->addInput($user);
 
         $pwd = new Typecho_Widget_Helper_Form_Element_Text('password', NULL,
-            '', _t('密码'), _t('启用身份验证后有效，有些服务商可能需要专用密码，详询服务商支持'));
+            '', _t('密码'), _t('启用身份验证后有效，有些服务商可能需要专用密码，详询服务商客服'));
         $form->addInput($pwd);
 
         $from = new Typecho_Widget_Helper_Form_Element_Text('from', NULL,
@@ -154,13 +177,6 @@ class Notice_Plugin implements Typecho_Plugin_Interface
             "您在 [{title}] 的评论已被审核通过", _t('访客接收邮件标题'));
         $form->addInput($titleForApproved->addRule('required', _t('访客接收邮件标题 不能为空')));
 
-        $delDB = new Typecho_Widget_Helper_Form_Element_Radio('delDB',
-            array(
-                '1' => '是',
-                '0' => '否'
-            ), '1', _t('卸载插件时删除数据库'),
-            _t('取消勾选则表示当您禁用此插件时，插件的历史记录仍将存留在数据库中。'));
-        $form->addInput($delDB);
     }
 
     /**

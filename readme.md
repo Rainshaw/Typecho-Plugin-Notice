@@ -4,7 +4,7 @@
 ![](https://visitor-badge.glitch.me/badge?page_id=https://github.com/RainshawGao/Typecho-Plugin-Notice)
 ![](https://img.shields.io/badge/license-GPL_v3-000000.svg?style=plastic)
 
-![](https://img.shields.io/badge/Version-0.2.1-yellow.svg?style=plastic)
+![](https://img.shields.io/badge/Version-0.2.2-yellow.svg?style=plastic)
 [![](https://img.shields.io/badge/github-@RainshawGao-red.svg?style=plastic)](http://github.com/RainshawGao)
 [![](https://img.shields.io/badge/Email-rxg-red.svg?style=plastic)](mailto:rxg@live.com)
 

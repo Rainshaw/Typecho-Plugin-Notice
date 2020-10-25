@@ -9,7 +9,7 @@ require_once 'phpmailer/Exception.php';
  *
  * @package Notice
  * @author <strong style="color:#28B7FF;font-family: 楷体;">Rainshaw</strong>
- * @version 0.2.0
+ * @version 0.2.1
  * @link https://github.com/RainshawGao
  * @dependence 18.10.23
  */
@@ -72,17 +72,25 @@ class Notice_Plugin implements Typecho_Plugin_Interface
         $setting = new Typecho_Widget_Helper_Form_Element_Checkbox('setting',
             array(
                 'serverchan' => '启用Server酱',
+                'qmsg' => '启用Qmsg酱',
                 'mail' => '启用邮件',
-                'qmsg' => '启用Qmsg酱'
             ),
             NULL, '启用设置', _t('请选择您要启用的通知方式。'));
         $form->addInput($setting->multiMode());
 
-        $scKey = new Typecho_Widget_Helper_Form_Element_Text('scKey', NULL, NULL, _t('SCKEY'),
+        // Server 酱
+        $scKey = new Typecho_Widget_Helper_Form_Element_Text('scKey', NULL, NULL, _t('Server酱SCKEY'),
             _t('想要获取 SCKEY 则需要在 <a href="https://sc.ftqq.com/">Server酱</a> 使用 Github 账户登录<br>
                 同时，注册后需要在 <a href="http://sc.ftqq.com/">Server酱</a> 绑定你的微信号才能收到推送'));
         $form->addInput($scKey);
 
+        $scMsg = new Typecho_Widget_Helper_Form_Element_TextArea('scMsg', NULL,
+            "评论人：**{author}**\n\n 评论内容:\n> {text}\n\n链接：{permalink}",
+            _t("Server酱通知模版"), _t("通过server酱通知您的内容模版，可使用变量列表见插件说明")
+        );
+        $form->addInput($scMsg);
+
+        // Qmsg 酱
         $QmsgKey = new Typecho_Widget_Helper_Form_Element_Text('QmsgKey', NULL, NULL, _t('QmsgKey'),
             _t('请进入 <a href="https://qmsg.zendee.cn/api">Qmsg酱文档</a> 获取您的 KEY: https://qmsg.zendee.cn:443/send/{QmsgKey}'));
         $form->addInput($QmsgKey);
@@ -92,6 +100,13 @@ class Notice_Plugin implements Typecho_Plugin_Interface
                 如果您有多个应用，且在该网站上增加了许多QQ号，您可以在这里填写本站点推送的QQ号（用英文逗号分割，最后不需要加逗号），不填则向该网站列表中所有的QQ号发送消息'));
         $form->addInput($QmsgQQ);
 
+        $QmsgMsg = new Typecho_Widget_Helper_Form_Element_TextArea('QmsgMsg', NULL,
+            "评论人：{author}\n评论内容:\n{text}\n\n链接：{permalink}",
+            _t("Qmsg酱通知模版"), _t("通过Qmsg酱通知您的内容模版，可使用变量列表见插件说明")
+        );
+        $form->addInput($QmsgMsg);
+
+        // SMTP
         $host = new Typecho_Widget_Helper_Form_Element_Text('host', NULL, '',
             _t('邮件服务器地址'), _t('请填写 SMTP 服务器地址'));
         $form->addInput($host);
@@ -172,10 +187,16 @@ class Notice_Plugin implements Typecho_Plugin_Interface
             if (empty($settings['scKey'])) {
                 return _t('请填写SCKEY');
             }
+            if (empty($settings['scMsg'])) {
+                return _t('请填写Server酱通知模版');
+            }
         }
         if (in_array('qmsg', $settings['setting'])) {
             if (empty($settings['QmsgKey'])) {
                 return _t('请填写QmsgKEY');
+            }
+            if (empty($settings['QmsgMsg'])) {
+                return _t('请填写Qmsg酱通知模版');
             }
         }
         if (in_array('mail', $settings['setting'])) {
@@ -272,12 +293,14 @@ class Notice_Plugin implements Typecho_Plugin_Interface
         if ($comment->authorId == 1) {
             return;
         }
+
+        $msg = $pluginOptions->scMsg;
+        $msg = self::replace($msg, $coid);
+
         $postdata = http_build_query(
             array(
                 'text' => "有人在您的博客发表了评论",
-                'desp' => '评论人：**' . $comment->author . '**' . PHP_EOL
-                    . '评论内容:'. PHP_EOL . $comment->text . PHP_EOL
-                    . '链接：' . $comment->permalink
+                'desp' => $msg
             )
         );
 
@@ -291,7 +314,7 @@ class Notice_Plugin implements Typecho_Plugin_Interface
         $context = stream_context_create($opts);
         $result = file_get_contents('https://sc.ftqq.com/' . $key . '.send', false, $context);
 
-        self::log($coid, 'wechat', $result);
+        self::log($coid, 'wechat', $result . "\n\n" . $msg);
     }
 
     /**
@@ -319,21 +342,19 @@ class Notice_Plugin implements Typecho_Plugin_Interface
             return;
         }
 
-        $param = '标题：' . $comment->title . PHP_EOL
-            . '评论人：' . $comment->author . PHP_EOL
-            . '评论内容:'. PHP_EOL . $comment->text . PHP_EOL
-            . '链接：' . $comment->permalink;
+        $msg = $pluginOptions->QmsgMsg;
+        $msg = self::replace($msg, $coid);
 
         if ($pluginOptions->QmsgQQ == NULL) {
             $postdata = http_build_query(
                 array(
-                    'msg' => $param
+                    'msg' => $msg
                 )
             );
         } else {
             $postdata = http_build_query(
                 array(
-                    'msg' => $param,
+                    'msg' => $msg,
                     'qq' => $pluginOptions->QmsgQQ
                 )
             );
@@ -349,7 +370,7 @@ class Notice_Plugin implements Typecho_Plugin_Interface
         $context = stream_context_create($opts);
         $result = file_get_contents('https://qmsg.zendee.cn/send/' . $key, false, $context);
 
-        self::log($coid, 'qq', $param.$result);
+        self::log($coid, 'qq', $result ."\n\n" . $msg);
     }
 
     /**
@@ -537,23 +558,23 @@ class Notice_Plugin implements Typecho_Plugin_Interface
             $parent = Helper::widgetById('comments', $comment->parent);
         }
         $status = array(
-            "approved" => '通过',
-            "waiting" => '待审',
-            "spam" => '垃圾'
+            "approved" => "通过",
+            "waiting" => "待审",
+            "spam" => "垃圾"
         );
         $search = array(
-            '{siteTitle}',
-            '{title}',
-            '{author}',
-            '{author_p}',
-            '{ip}',
-            '{mail}',
-            '{permalink}',
-            '{manage}',
-            '{text}',
-            '{text_p}',
-            '{time}',
-            '{status}'
+            "{siteTitle}",
+            "{title}",
+            "{author}",
+            "{author_p}",
+            "{ip}",
+            "{mail}",
+            "{permalink}",
+            "{manage}",
+            "{text}",
+            "{text_p}",
+            "{time}",
+            "{status}"
         );
         $replace = array(
             Helper::options()->title,

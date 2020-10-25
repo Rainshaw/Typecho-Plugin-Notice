@@ -4,7 +4,7 @@
 ![](https://visitor-badge.glitch.me/badge?page_id=https://github.com/RainshawGao/Typecho-Plugin-Notice)
 ![](https://img.shields.io/badge/license-GPL_v3-000000.svg?style=plastic)
 
-![](https://img.shields.io/badge/Version-0.2.0-yellow.svg?style=plastic)
+![](https://img.shields.io/badge/Version-0.2.1-yellow.svg?style=plastic)
 [![](https://img.shields.io/badge/github-@RainshawGao-red.svg?style=plastic)](http://github.com/RainshawGao)
 [![](https://img.shields.io/badge/Email-rxg-red.svg?style=plastic)](mailto:rxg@live.com)
 
@@ -23,6 +23,7 @@ Notice 是 Typecho 评论通知插件，支持 SMTP、Server酱、Qmsg酱 两种
 - [x] 邮件推送、自定义邮件模版
 - [x] Server酱推送
 - [x] QQ 推送
+- [x] Server酱、Qmsg酱推送模版
 - [ ] 邮件推送测试
 - [ ] Server 酱推送测试
 - [ ] 在线编辑模版文件

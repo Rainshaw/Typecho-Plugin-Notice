@@ -4,7 +4,6 @@
 ![](https://visitor-badge.glitch.me/badge?page_id=https://github.com/RainshawGao/Typecho-Plugin-Notice)
 ![](https://img.shields.io/badge/license-GPL_v3-000000.svg?style=plastic)
 
-![](https://img.shields.io/badge/Version-0.2.2-yellow.svg?style=plastic)
 [![](https://img.shields.io/badge/github-@RainshawGao-red.svg?style=plastic)](http://github.com/RainshawGao)
 [![](https://img.shields.io/badge/Email-rxg-red.svg?style=plastic)](mailto:rxg@live.com)
 
@@ -14,7 +13,7 @@ Notice 是 Typecho 评论通知插件，支持 SMTP、Server酱、Qmsg酱 两种
 
 ## 安装方法
 
-1. 点击仓库右上角下载源码或点击[链接](https://github.com/RainshawGao/Typecho-Plugin-Notice/archive/master.zip)下载最新版本插件
+1. 前往[Releases](https://github.com/RainshawGao/Typecho-Plugin-Notice/releases/latest)下载最新版本插件
 2. 解压后重命名文件夹为 `Notice` ，再上传至网站的 `/usr/plugins/` 目录下
 3. 启用该插件，正确填写相关信息
 

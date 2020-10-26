@@ -4,12 +4,14 @@ require_once 'phpmailer/PHPMailer.php';
 require_once 'phpmailer/SMTP.php';
 require_once 'phpmailer/Exception.php';
 
+define('__TYPECHO_PLUGIN_NOTICE_VERSION__', '0.3.0');
+
 /**
  * <strong style="color:#28B7FF;font-family: 楷体;">评论通知</strong>
  *
  * @package Notice
  * @author <strong style="color:#28B7FF;font-family: 楷体;">Rainshaw</strong>
- * @version 0.2.2
+ * @version 0.3.0
  * @link https://github.com/RainshawGao
  * @dependence 18.10.23
  */
@@ -25,9 +27,13 @@ class Notice_Plugin implements Typecho_Plugin_Interface
     public static function activate()
     {
         $s = self::dbInstall();
+        // 更新提示
+        Typecho_Plugin::factory('admin/menu.php')->navBar = array(__CLASS__, 'updateTip');
+        // 通知触发函数
         Typecho_Plugin::factory('Widget_Feedback')->finishComment = array(__CLASS__, 'requestService');
         Typecho_Plugin::factory('Widget_Comments_Edit')->finishComment = array(__CLASS__, 'requestService');
         Typecho_Plugin::factory('Widget_Comments_Edit')->mark = array(__CLASS__, 'approvedMail');
+        // 注册异步调用函数
         Typecho_Plugin::factory('Widget_Service')->sendSC = array(__CLASS__, 'sendSC');
         Typecho_Plugin::factory('Widget_Service')->sendQmsg = array(__CLASS__, 'sendQmsg');
         Typecho_Plugin::factory('Widget_Service')->sendMail = array(__CLASS__, 'sendMail');
@@ -78,8 +84,10 @@ class Notice_Plugin implements Typecho_Plugin_Interface
                 'serverchan' => '启用Server酱',
                 'qmsg' => '启用Qmsg酱',
                 'mail' => '启用邮件',
+                'updatetip' => '启用更新提示',
             ),
-            NULL, '启用设置', _t('请选择您要启用的通知方式。'));
+            array('updatetip'), '插件设置', _t('请选择您要启用的通知方式。<br/>' .
+                '当勾选"启用更新提示"时，在本插件更新后，您会在后台界面看到一条更新提示～'));
         $form->addInput($setting->multiMode());
 
         $delDB = new Typecho_Widget_Helper_Form_Element_Radio('delDB',
@@ -386,7 +394,7 @@ class Notice_Plugin implements Typecho_Plugin_Interface
         $context = stream_context_create($opts);
         $result = file_get_contents('https://qmsg.zendee.cn/send/' . $key, false, $context);
 
-        self::log($coid, 'qq', $result ."\n\n" . $msg);
+        self::log($coid, 'qq', $result . "\n\n" . $msg);
     }
 
     /**
@@ -607,6 +615,64 @@ class Notice_Plugin implements Typecho_Plugin_Interface
             $status[$comment->status]
         );
         return str_replace($search, $replace, $str);
+    }
+
+    /**
+     * 更新提示
+     *
+     * @access public
+     * @return void
+     */
+
+    public static function updateTip()
+    {
+        $option = Helper::options()->plugin('Notice');
+        if (in_array('updatetip', $option->setting)) {
+            $date = new Typecho_Date();
+            $date = $date->timeStamp;
+            $data = file_get_contents(__DIR__ . '/cache/version.json');
+            if ($data) {
+                $data = json_decode($data, true);
+                if ($date - $data['time'] < 86400) {
+                    if ($data['version'] != __TYPECHO_PLUGIN_NOTICE_VERSION__) {
+                        echo '<a href="https://github.com/RainshawGao/Typecho-Plugin-Notice/releases">Notice插件有更新</a>';
+                        return;
+                    } else {
+                        return;
+                    }
+                }
+            }
+            //
+            $tag = self::getNewRelease();
+            $data = json_encode(array(
+                "version" => $tag,
+                "time" => $date
+            ));
+            file_put_contents(__DIR__ . '/cache/version.json', $data);
+            if ($tag != __TYPECHO_PLUGIN_NOTICE_VERSION__) {
+                echo '<a href="https://github.com/RainshawGao/Typecho-Plugin-Notice/releases">Notice插件有更新</a>';
+                return;
+            } else {
+                return;
+            }
+
+        }
+    }
+
+    /**
+     * 获取 Github 最新 Release Tag 版本
+     *
+     * @access private
+     * @return string
+     */
+    private static function getNewRelease()
+    {
+        $ch = curl_init("https://api.github.com/repos/RainshawGao/Typecho-Plugin-Notice/releases/latest");
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_USERAGENT, "Typecho-Plugin-Notice");
+        $res = curl_exec($ch);
+        $data = json_decode($res, JSON_UNESCAPED_UNICODE);
+        return $data['tag_name'];
     }
 
     /**

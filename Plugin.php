@@ -1,17 +1,17 @@
 <?php
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
-require_once 'phpmailer/PHPMailer.php';
-require_once 'phpmailer/SMTP.php';
-require_once 'phpmailer/Exception.php';
+require_once 'libs/phpmailer/PHPMailer.php';
+require_once 'libs/phpmailer/SMTP.php';
+require_once 'libs/phpmailer/Exception.php';
 
-define('__TYPECHO_PLUGIN_NOTICE_VERSION__', '0.3.0');
+define('__TYPECHO_PLUGIN_NOTICE_VERSION__', '0.4.0');
 
 /**
  * <strong style="color:#28B7FF;font-family: 楷体;">评论通知</strong>
  *
  * @package Notice
  * @author <strong style="color:#28B7FF;font-family: 楷体;">Rainshaw</strong>
- * @version 0.3.0
+ * @version 0.4.0
  * @link https://github.com/RainshawGao
  * @dependence 18.10.23
  */
@@ -75,11 +75,22 @@ class Notice_Plugin implements Typecho_Plugin_Interface
      */
     public static function config(Typecho_Widget_Helper_Form $form)
     {
-        $serviceTitle = new Typecho_Widget_Helper_Layout('div', array('class=' => 'typecho-page-title'));
-        $serviceTitle->html('<h1>推送服务配置</h1>');
-        $form->addItem($serviceTitle);
+        $option = Helper::options();
+        echo '<link href="https://cdn.jsdelivr.net/npm/mdui@0.4.3/dist/css/mdui.min.css" rel="stylesheet">';
+        echo '<script src="https://cdn.jsdelivr.net/npm/mdui@0.4.3/dist/js/mdui.min.js"></script>';
+        echo '<link href="' . $option->pluginUrl . '/Notice/assets/notice.css" rel="stylesheet" type="text/css"/>';
+        /*表单组件*/
+        require("libs/formelement/FormElements.php");
+        require('libs/formelement/Checkbox.php');
+        require('libs/formelement/Text.php');
+        require('libs/formelement/Radio.php');
+        require('libs/formelement/Select.php');
+        require('libs/formelement/Textarea.php');
 
-        $setting = new Typecho_Widget_Helper_Form_Element_Checkbox('setting',
+        $form->addItem(new CustomLabel('<div class="mdui-panel" mdui-panel="">'));
+        $form->addItem(new Title('推送服务配置', '推送服务开关、插件更新提示、数据库配置', true));
+
+        $setting = new Checkbox('setting',
             array(
                 'serverchan' => '启用Server酱',
                 'qmsg' => '启用Qmsg酱',
@@ -87,103 +98,109 @@ class Notice_Plugin implements Typecho_Plugin_Interface
                 'updatetip' => '启用更新提示',
             ),
             array('updatetip'), '插件设置', _t('请选择您要启用的通知方式。<br/>' .
-                '当勾选"启用更新提示"时，在本插件更新后，您会在后台界面看到一条更新提示～'));
+                '当勾选"启用更新提示"时，在本插件更新后，您会在后台界面看到一条更新提示～'), true);
         $form->addInput($setting->multiMode());
 
-        $delDB = new Typecho_Widget_Helper_Form_Element_Radio('delDB',
+        $delDB = new Radio('delDB',
             array(
                 '1' => '是',
                 '0' => '否'
             ), '0', _t('卸载插件时删除数据库'),
-            _t('取消勾选则表示当您禁用此插件时，插件的历史记录仍将存留在数据库中。'));
+            _t('取消勾选则表示当您禁用此插件时，插件的历史记录仍将存留在数据库中。'), true);
         $form->addInput($delDB);
+        $form->addItem(new Typecho_Widget_Helper_Layout('/div'));
+        $form->addItem(new Typecho_Widget_Helper_Layout('/div'));
 
         // Server 酱
-        $serviceTitle = new Typecho_Widget_Helper_Layout('div', array('class=' => 'typecho-page-title'));
-        $serviceTitle->html('<h2><a href="http://sc.ftqq.com/">Server酱</a>配置</h2>');
-        $form->addItem($serviceTitle);
-
-        $scKey = new Typecho_Widget_Helper_Form_Element_Text('scKey', NULL, NULL, _t('Server酱SCKEY'),
+        $form->addItem(new Title('Server酱配置', 'SCKEY、Server酱通知模版'));
+        $scKey = new Text('scKey', NULL, NULL, _t('Server酱SCKEY'),
             _t('想要获取 SCKEY 则需要在 <a href="https://sc.ftqq.com/">Server酱</a> 使用 Github 账户登录<br>
                 同时，注册后需要在 <a href="http://sc.ftqq.com/">Server酱</a> 绑定你的微信号才能收到推送'));
         $form->addInput($scKey);
 
-        $scMsg = new Typecho_Widget_Helper_Form_Element_TextArea('scMsg', NULL,
+        $scMsg = new Textarea('scMsg', NULL,
             "评论人：**{author}**\n\n 评论内容:\n> {text}\n\n链接：{permalink}",
             _t("Server酱通知模版"), _t("通过server酱通知您的内容模版，可使用变量列表见插件说明")
         );
         $form->addInput($scMsg);
+        $form->addItem(new Typecho_Widget_Helper_Layout('/div'));
+        $form->addItem(new Typecho_Widget_Helper_Layout('/div'));
 
         // Qmsg 酱
-        $serviceTitle = new Typecho_Widget_Helper_Layout('div', array('class=' => 'typecho-page-title'));
-        $serviceTitle->html('<h2><a href="https://qmsg.zendee.cn/">Qmsg酱</a>配置</h2>');
-        $form->addItem($serviceTitle);
-
-        $QmsgKey = new Typecho_Widget_Helper_Form_Element_Text('QmsgKey', NULL, NULL, _t('QmsgKey'),
+        $form->addItem(new Title('Qmsg酱配置', 'QmsgKEY、QmsgQQ、Qmsg酱通知模版'));
+        $QmsgKey = new Text('QmsgKey', NULL, NULL, _t('QmsgKey'),
             _t('请进入 <a href="https://qmsg.zendee.cn/api">Qmsg酱文档</a> 获取您的 KEY: https://qmsg.zendee.cn:443/send/{QmsgKey}'));
         $form->addInput($QmsgKey);
 
-        $QmsgQQ = new Typecho_Widget_Helper_Form_Element_Text('QmsgQQ', NULL, NULL, _t('QmsgQQ'),
+        $QmsgQQ = new Text('QmsgQQ', NULL, NULL, _t('QmsgQQ'),
             _t('请进入 <a href="https://qmsg.zendee.cn/me">Qmsg酱</a> 选择机器人QQ号，使用您接收通知的QQ号添加其为好友，并将该QQ号添加到该页面下方QQ号列表中<br/>
                 如果您有多个应用，且在该网站上增加了许多QQ号，您可以在这里填写本站点推送的QQ号（用英文逗号分割，最后不需要加逗号），不填则向该网站列表中所有的QQ号发送消息'));
         $form->addInput($QmsgQQ);
 
-        $QmsgMsg = new Typecho_Widget_Helper_Form_Element_TextArea('QmsgMsg', NULL,
+        $QmsgMsg = new Textarea('QmsgMsg', NULL,
             "评论人：{author}\n评论内容:\n{text}\n\n链接：{permalink}",
             _t("Qmsg酱通知模版"), _t("通过Qmsg酱通知您的内容模版，可使用变量列表见插件说明")
         );
         $form->addInput($QmsgMsg);
+        $form->addItem(new Typecho_Widget_Helper_Layout('/div'));
+        $form->addItem(new Typecho_Widget_Helper_Layout('/div'));
 
         // SMTP
-        $serviceTitle = new Typecho_Widget_Helper_Layout('div', array('class=' => 'typecho-page-title'));
-        $serviceTitle->html('<h2>SMTP配置</h2>');
-        $form->addItem($serviceTitle);
-        $host = new Typecho_Widget_Helper_Form_Element_Text('host', NULL, '',
+        $form->addItem(new Title('SMTP 配置'));
+        $host = new Text('host', NULL, '',
             _t('邮件服务器地址'), _t('请填写 SMTP 服务器地址'));
         $form->addInput($host);
 
-        $port = new Typecho_Widget_Helper_Form_Element_Text('port', null, 465,
+        $port = new Text('port', null, 465,
             _t('端口号'), _t('端口号必须是数字，一般为465'));
         $form->addInput($port->addRule('isInteger', _t('端口号必须是数字')));
 
-        $ssl = new Typecho_Widget_Helper_Form_Element_Select('secure',
+        $ssl = new Select('secure',
             array('tls' => 'tls', 'ssl' => 'ssl'), 'ssl',
             _t('连接加密方式'));
         $form->addInput($ssl);
 
-        $auth = new Typecho_Widget_Helper_Form_Element_Radio('auth',
+        $auth = new Radio('auth',
             array(1 => '是', 0 => '否'), 1,
             _t('启用身份验证'), _t('勾选后必须填写用户名和密码两项'));
         $form->addInput($auth);
 
-        $user = new Typecho_Widget_Helper_Form_Element_Text('user', NULL,
+        $user = new Text('user', NULL,
             '', _t('用户名'), _t('启用身份验证后有效，一般为 name@domain.com '));
         $form->addInput($user);
 
-        $pwd = new Typecho_Widget_Helper_Form_Element_Text('password', NULL,
+        $pwd = new Text('password', NULL,
             '', _t('密码'), _t('启用身份验证后有效，有些服务商可能需要专用密码，详询服务商客服'));
         $form->addInput($pwd);
 
-        $from = new Typecho_Widget_Helper_Form_Element_Text('from', NULL,
+        $from = new Text('from', NULL,
             '', _t('发信人邮箱'));
         $form->addInput($from->addRule('email', _t('请输入正确的邮箱地址')));
 
-        $from_name = new Typecho_Widget_Helper_Form_Element_Text('from_name', NULL,
+        $from_name = new Text('from_name', NULL,
             Helper::options()->title, _t('发信人名称'), _t('默认为站点标题'));
         $form->addInput($from_name);
 
 
-        $titleForOwner = new Typecho_Widget_Helper_Form_Element_Text('titleForOwner', null,
+        $titleForOwner = new Text('titleForOwner', null,
             "[{title}] 一文有新的评论", _t('博主接收邮件标题'));
         $form->addInput($titleForOwner->addRule('required', _t('博主接收邮件标题 不能为空')));
 
-        $titleForGuest = new Typecho_Widget_Helper_Form_Element_Text('titleForGuest', null,
+        $titleForGuest = new Text('titleForGuest', null,
             "您在 [{title}] 的评论有了回复", _t('访客接收邮件标题'));
         $form->addInput($titleForGuest->addRule('required', _t('访客接收邮件标题 不能为空')));
 
-        $titleForApproved = new Typecho_Widget_Helper_Form_Element_Text('titleForApproved', null,
+        $titleForApproved = new Text('titleForApproved', null,
             "您在 [{title}] 的评论已被审核通过", _t('访客接收邮件标题'));
         $form->addInput($titleForApproved->addRule('required', _t('访客接收邮件标题 不能为空')));
+
+        $form->addItem(new Typecho_Widget_Helper_Layout('/div'));
+        $form->addItem(new Typecho_Widget_Helper_Layout('/div'));
+        $form->addItem(new Typecho_Widget_Helper_Layout('/div'));
+
+        $submit = new Typecho_Widget_Helper_Form_Element_Submit(NULL, NULL, _t('保存设置'));
+        $submit->input->setAttribute('class', 'mdui-btn mdui-color-theme-accent mdui-ripple submit_only');
+        $form->addItem($submit);
 
     }
 
@@ -622,8 +639,8 @@ class Notice_Plugin implements Typecho_Plugin_Interface
      *
      * @access public
      * @return void
+     * @throws Typecho_Plugin_Exception
      */
-
     public static function updateTip()
     {
         $option = Helper::options()->plugin('Notice');

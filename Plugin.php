@@ -3,15 +3,16 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 require_once 'libs/phpmailer/PHPMailer.php';
 require_once 'libs/phpmailer/SMTP.php';
 require_once 'libs/phpmailer/Exception.php';
+require_once 'libs/Config.php';
 
-define('__TYPECHO_PLUGIN_NOTICE_VERSION__', '0.4.0');
+define('__TYPECHO_PLUGIN_NOTICE_VERSION__', '0.4.1');
 
 /**
  * <strong style="color:#28B7FF;font-family: 楷体;">评论通知</strong>
  *
  * @package Notice
  * @author <strong style="color:#28B7FF;font-family: 楷体;">Rainshaw</strong>
- * @version 0.4.0
+ * @version 0.4.1
  * @link https://github.com/RainshawGao
  * @dependence 18.10.23
  */
@@ -38,8 +39,20 @@ class Notice_Plugin implements Typecho_Plugin_Interface
         Typecho_Plugin::factory('Widget_Service')->sendQmsg = array(__CLASS__, 'sendQmsg');
         Typecho_Plugin::factory('Widget_Service')->sendMail = array(__CLASS__, 'sendMail');
         Typecho_Plugin::factory('Widget_Service')->sendApprovedMail = array(__CLASS__, 'sendApprovedMail');
-
-        return _t($s . '请设置Servechan密钥和邮箱信息，以便插件正常使用。');
+        return '<div id="AS-SW" style="border-radius:2px;box-shadow:1px 1px 50px rgba(0,0,0,.3);background-color: #fff;width: auto; height: auto; z-index: 2501554; position: fixed; margin-left: -125px; margin-top: -75px; left: 50%; top: 50%;">
+                    <div style="text-align: center;height:42px;line-height:42px;border-bottom:1px solid #eee;font-size:14px;overflow:hidden;border-radius:2px 2px 0 0;font-weight:bold;position:relative;cursor:move;min-width:200px;box-sizing:border-box;background-color:#28B7FF;color:#fff;">
+                        ' . $s . '
+                    </div>
+                    <div style="padding:15px;font-size:14px;min-width:150px;position:relative;box-sizing:border-box;height: 50px;">
+                        欢迎使用Notice插件，希望能让您喜欢！
+                    </div>
+                    <div style="text-align:right;padding-bottom:15px;padding-right:10px;min-width:200px;box-sizing:border-box;">
+                        <button onclick="colseDIV()"style="height:28px;line-height:28px;margin:15px 5px 0;padding:0 15px;border-radius:2px;font-weight:400;cursor:pointer;text-decoration:none;outline:none;background-color:#28B7FF;border:0;color:#fff;">
+                            关闭
+                        </button>
+                    </div>
+                    <Script>function colseDIV(){$("#AS-SW").hide()}</Script>
+                </div>';
     }
 
     /**
@@ -54,16 +67,27 @@ class Notice_Plugin implements Typecho_Plugin_Interface
      */
     public static function deactivate()
     {
-        try {
-            $delDB = Helper::options()->plugin('Notice')->delDB;
-        } catch (Typecho_Plugin_Exception $e) {
-            return '禁用出现错误:' . $e . '为避免数据损失，不删除数据库！';
-        }
+        $delDB = Helper::options()->plugin('Notice')->delDB;
+
         if ($delDB == 1) {
-            return self::dbUninstall();
+            $s = self::dbUninstall();
         } else {
-            return _t('注意！您的设置为不删除数据库！');
+            $s = _t('您的设置为不删除数据库！插件卸载成功！');
         }
+        return '<div id="AS-SW" style="border-radius:2px;box-shadow:1px 1px 50px rgba(0,0,0,.3);background-color: #fff;width: auto; height: auto; z-index: 2501554; position: fixed; margin-left: -125px; margin-top: -75px; left: 50%; top: 50%;">
+                    <div style="text-align: center;height:42px;line-height:42px;border-bottom:1px solid #eee;font-size:14px;overflow:hidden;border-radius:2px 2px 0 0;font-weight:bold;position:relative;cursor:move;min-width:200px;box-sizing:border-box;background-color:#28B7FF;color:#fff;">
+                        ' . $s . '
+                    </div>
+                    <div style="padding:15px;font-size:14px;min-width:150px;position:relative;box-sizing:border-box;height: 50px;">
+                        感谢您使用Notice，期待与您的下一次相遇！
+                    </div>
+                    <div style="text-align:right;padding-bottom:15px;padding-right:10px;min-width:200px;box-sizing:border-box;">
+                        <button onclick="colseDIV()" style="height:28px;line-height:28px;margin:15px 5px 0;padding:0 15px;border-radius:2px;font-weight:400;cursor:pointer;text-decoration:none;outline:none;background-color:#28B7FF;border:0;color:#fff;">
+                            关闭
+                        </button>
+                    </div>
+                    <Script>function colseDIV(){$("#AS-SW").hide()}</Script>
+                </div>';
     }
 
     /**
@@ -75,127 +99,22 @@ class Notice_Plugin implements Typecho_Plugin_Interface
      */
     public static function config(Typecho_Widget_Helper_Form $form)
     {
-        $option = Helper::options();
-        echo '<link href="https://cdn.jsdelivr.net/npm/mdui@0.4.3/dist/css/mdui.min.css" rel="stylesheet">';
-        echo '<script src="https://cdn.jsdelivr.net/npm/mdui@0.4.3/dist/js/mdui.min.js"></script>';
-        echo '<link href="' . $option->pluginUrl . '/Notice/assets/notice.css" rel="stylesheet" type="text/css"/>';
-        /*表单组件*/
-        require("libs/formelement/FormElements.php");
-        require('libs/formelement/Checkbox.php');
-        require('libs/formelement/Text.php');
-        require('libs/formelement/Radio.php');
-        require('libs/formelement/Select.php');
-        require('libs/formelement/Textarea.php');
+        Notice_Config::style($form);
+        Notice_Config::header($form);
+        $form->addItem(new MDCustomLabel('<div class="mdui-panel" mdui-panel="">'));
+        {
+            // 插件配置
+            Notice_Config::Setting($form);
 
-        $form->addItem(new CustomLabel('<div class="mdui-panel" mdui-panel="">'));
-        $form->addItem(new Title('推送服务配置', '推送服务开关、插件更新提示、数据库配置', true));
+            // Server 酱
+            Notice_Config::Serverchan($form);
 
-        $setting = new Checkbox('setting',
-            array(
-                'serverchan' => '启用Server酱',
-                'qmsg' => '启用Qmsg酱',
-                'mail' => '启用邮件',
-                'updatetip' => '启用更新提示',
-            ),
-            array('updatetip'), '插件设置', _t('请选择您要启用的通知方式。<br/>' .
-                '当勾选"启用更新提示"时，在本插件更新后，您会在后台界面看到一条更新提示～'), true);
-        $form->addInput($setting->multiMode());
+            // Qmsg 酱
+            Notice_Config::Qmsgchan($form);
 
-        $delDB = new Radio('delDB',
-            array(
-                '1' => '是',
-                '0' => '否'
-            ), '0', _t('卸载插件时删除数据库'),
-            _t('取消勾选则表示当您禁用此插件时，插件的历史记录仍将存留在数据库中。'), true);
-        $form->addInput($delDB);
-        $form->addItem(new Typecho_Widget_Helper_Layout('/div'));
-        $form->addItem(new Typecho_Widget_Helper_Layout('/div'));
-
-        // Server 酱
-        $form->addItem(new Title('Server酱配置', 'SCKEY、Server酱通知模版'));
-        $scKey = new Text('scKey', NULL, NULL, _t('Server酱SCKEY'),
-            _t('想要获取 SCKEY 则需要在 <a href="https://sc.ftqq.com/">Server酱</a> 使用 Github 账户登录<br>
-                同时，注册后需要在 <a href="http://sc.ftqq.com/">Server酱</a> 绑定你的微信号才能收到推送'));
-        $form->addInput($scKey);
-
-        $scMsg = new Textarea('scMsg', NULL,
-            "评论人：**{author}**\n\n 评论内容:\n> {text}\n\n链接：{permalink}",
-            _t("Server酱通知模版"), _t("通过server酱通知您的内容模版，可使用变量列表见插件说明")
-        );
-        $form->addInput($scMsg);
-        $form->addItem(new Typecho_Widget_Helper_Layout('/div'));
-        $form->addItem(new Typecho_Widget_Helper_Layout('/div'));
-
-        // Qmsg 酱
-        $form->addItem(new Title('Qmsg酱配置', 'QmsgKEY、QmsgQQ、Qmsg酱通知模版'));
-        $QmsgKey = new Text('QmsgKey', NULL, NULL, _t('QmsgKey'),
-            _t('请进入 <a href="https://qmsg.zendee.cn/api">Qmsg酱文档</a> 获取您的 KEY: https://qmsg.zendee.cn:443/send/{QmsgKey}'));
-        $form->addInput($QmsgKey);
-
-        $QmsgQQ = new Text('QmsgQQ', NULL, NULL, _t('QmsgQQ'),
-            _t('请进入 <a href="https://qmsg.zendee.cn/me">Qmsg酱</a> 选择机器人QQ号，使用您接收通知的QQ号添加其为好友，并将该QQ号添加到该页面下方QQ号列表中<br/>
-                如果您有多个应用，且在该网站上增加了许多QQ号，您可以在这里填写本站点推送的QQ号（用英文逗号分割，最后不需要加逗号），不填则向该网站列表中所有的QQ号发送消息'));
-        $form->addInput($QmsgQQ);
-
-        $QmsgMsg = new Textarea('QmsgMsg', NULL,
-            "评论人：{author}\n评论内容:\n{text}\n\n链接：{permalink}",
-            _t("Qmsg酱通知模版"), _t("通过Qmsg酱通知您的内容模版，可使用变量列表见插件说明")
-        );
-        $form->addInput($QmsgMsg);
-        $form->addItem(new Typecho_Widget_Helper_Layout('/div'));
-        $form->addItem(new Typecho_Widget_Helper_Layout('/div'));
-
-        // SMTP
-        $form->addItem(new Title('SMTP 配置'));
-        $host = new Text('host', NULL, '',
-            _t('邮件服务器地址'), _t('请填写 SMTP 服务器地址'));
-        $form->addInput($host);
-
-        $port = new Text('port', null, 465,
-            _t('端口号'), _t('端口号必须是数字，一般为465'));
-        $form->addInput($port->addRule('isInteger', _t('端口号必须是数字')));
-
-        $ssl = new Select('secure',
-            array('tls' => 'tls', 'ssl' => 'ssl'), 'ssl',
-            _t('连接加密方式'));
-        $form->addInput($ssl);
-
-        $auth = new Radio('auth',
-            array(1 => '是', 0 => '否'), 1,
-            _t('启用身份验证'), _t('勾选后必须填写用户名和密码两项'));
-        $form->addInput($auth);
-
-        $user = new Text('user', NULL,
-            '', _t('用户名'), _t('启用身份验证后有效，一般为 name@domain.com '));
-        $form->addInput($user);
-
-        $pwd = new Text('password', NULL,
-            '', _t('密码'), _t('启用身份验证后有效，有些服务商可能需要专用密码，详询服务商客服'));
-        $form->addInput($pwd);
-
-        $from = new Text('from', NULL,
-            '', _t('发信人邮箱'));
-        $form->addInput($from->addRule('email', _t('请输入正确的邮箱地址')));
-
-        $from_name = new Text('from_name', NULL,
-            Helper::options()->title, _t('发信人名称'), _t('默认为站点标题'));
-        $form->addInput($from_name);
-
-
-        $titleForOwner = new Text('titleForOwner', null,
-            "[{title}] 一文有新的评论", _t('博主接收邮件标题'));
-        $form->addInput($titleForOwner->addRule('required', _t('博主接收邮件标题 不能为空')));
-
-        $titleForGuest = new Text('titleForGuest', null,
-            "您在 [{title}] 的评论有了回复", _t('访客接收邮件标题'));
-        $form->addInput($titleForGuest->addRule('required', _t('访客接收邮件标题 不能为空')));
-
-        $titleForApproved = new Text('titleForApproved', null,
-            "您在 [{title}] 的评论已被审核通过", _t('访客接收邮件标题'));
-        $form->addInput($titleForApproved->addRule('required', _t('访客接收邮件标题 不能为空')));
-
-        $form->addItem(new Typecho_Widget_Helper_Layout('/div'));
-        $form->addItem(new Typecho_Widget_Helper_Layout('/div'));
+            // SMTP
+            Notice_Config::SMTP($form);
+        }
         $form->addItem(new Typecho_Widget_Helper_Layout('/div'));
 
         $submit = new Typecho_Widget_Helper_Form_Element_Submit(NULL, NULL, _t('保存设置'));
@@ -223,49 +142,7 @@ class Notice_Plugin implements Typecho_Plugin_Interface
      */
     public static function configCheck(array $settings)
     {
-
-        if (in_array('serverchan', $settings['setting'])) {
-            if (empty($settings['scKey'])) {
-                return _t('请填写SCKEY');
-            }
-            if (empty($settings['scMsg'])) {
-                return _t('请填写Server酱通知模版');
-            }
-        }
-        if (in_array('qmsg', $settings['setting'])) {
-            if (empty($settings['QmsgKey'])) {
-                return _t('请填写QmsgKEY');
-            }
-            if (empty($settings['QmsgMsg'])) {
-                return _t('请填写Qmsg酱通知模版');
-            }
-        }
-        if (in_array('mail', $settings['setting'])) {
-            if (empty($settings['host'])) {
-                return _t('请填写SMTP服务器地址');
-            }
-            if (empty($settings['port'])) {
-                return _t('请填写端口号');
-            }
-            if ($settings['auth'] == 1) {
-                if (empty($settings['user'])) {
-                    return _t('请填写SMTP用户名');
-                }
-                if (empty($settings['password'])) {
-                    return _t('请填写SMTP密码');
-                }
-            }
-            if (empty($settings['from'])) {
-                return _t('请填写发信人邮箱');
-            }
-
-            if (empty($settings['titleForOwner'])) {
-                return _t('请填写博主接收邮件标题');
-            }
-            if (empty($settings['titleForGuest'])) {
-                return _t('请填写访客接收邮件标题');
-            }
-        }
+        return Notice_Config::check($settings);
     }
 
     /**
@@ -292,7 +169,7 @@ class Notice_Plugin implements Typecho_Plugin_Interface
     }
 
     /**
-     * 审核通过评论回掉
+     * 审核通过评论回调
      *
      * @access public
      * @param $comment
@@ -412,26 +289,6 @@ class Notice_Plugin implements Typecho_Plugin_Interface
         $result = file_get_contents('https://qmsg.zendee.cn/send/' . $key, false, $context);
 
         self::log($coid, 'qq', $result . "\n\n" . $msg);
-    }
-
-    /**
-     * @param integer $coid 评论ID
-     * @param string $type wechat为server酱，mail为邮件
-     * @param string $log 日志
-     * @throws Typecho_Db_Exception
-     */
-    private static function log($coid, $type, $log)
-    {
-        $db = Typecho_Db::get();
-        $prefix = $db->getPrefix();
-
-        $id = $db->query(
-            $db->insert($prefix . 'notice')->rows(array(
-                'coid' => $coid,
-                'type' => $type,
-                'log' => $log
-            ))
-        );
     }
 
     /**
@@ -720,7 +577,7 @@ class Notice_Plugin implements Typecho_Plugin_Interface
                     $db->query($script, Typecho_Db::WRITE);
                 }
             }
-            return '建立邮件队列数据表，插件启用成功!';
+            return '数据表新建成功，插件启用成功!';
         } catch (Typecho_Db_Exception $e) {
             $code = $e->getCode();
             if (('Mysql' == $type && 1050 == $code) ||
@@ -728,9 +585,9 @@ class Notice_Plugin implements Typecho_Plugin_Interface
                 try {
                     $script = 'SELECT `id`, `coid`, `type`, `log` FROM `' . $prefix . 'notice`';
                     $db->query($script, Typecho_Db::READ);
-                    return '检测到邮件队列数据表，插件启用成功!';
+                    return '数据表已存在，插件启用成功!';
                 } catch (Typecho_Db_Exception $e) {
-                    throw new Typecho_Plugin_Exception('数据表检测失败，插件启用失败。错误号：' . $e->getCode());
+                    throw new Typecho_Plugin_Exception('数据表已存在但格式错误，插件启用失败。错误号：' . $e->getCode());
                 }
             } else {
                 throw new Typecho_Plugin_Exception('数据表建立失败，插件启用失败。错误号：' . $code);
@@ -766,10 +623,30 @@ class Notice_Plugin implements Typecho_Plugin_Interface
                     $db->query($script, Typecho_Db::WRITE);
                 }
             }
-            return '数据库删除成功!';
+            return '数据库删除成功!插件卸载成功！';
         } catch (Typecho_Db_Exception $e) {
-            throw new Typecho_Plugin_Exception('数据表删除失败！错误号：' . $e->getCode());
+            throw new Typecho_Plugin_Exception('数据表删除失败！错误号：' . $e->getCode() . '插件卸载失败！');
         }
+    }
+
+    /**
+     * @param integer $coid 评论ID
+     * @param string $type wechat为server酱，mail为邮件
+     * @param string $log 日志
+     * @throws Typecho_Db_Exception
+     */
+    private static function log($coid, $type, $log)
+    {
+        $db = Typecho_Db::get();
+        $prefix = $db->getPrefix();
+
+        $id = $db->query(
+            $db->insert($prefix . 'notice')->rows(array(
+                'coid' => $coid,
+                'type' => $type,
+                'log' => $log
+            ))
+        );
     }
 
 }

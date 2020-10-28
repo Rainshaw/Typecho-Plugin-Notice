@@ -21,6 +21,144 @@ class Notice_Config
 
     public static function header(Typecho_Widget_Helper_Form $form)
     {
+        $db = Typecho_Db::get();
+        if ($db->fetchRow($db->select()->from('table.options')->where('name = ?', 'plugin:Notice-Backup'))) {
+            $backupExist = '<div class="mdui-chip"><span class="mdui-chip-icon mdui-color-green"><i class="mdui-icon material-icons">backup</i></span><span
+        class="mdui-chip-title mdui-text-color-green">数据库中存在插件配置备份</span></div>';
+        } else {
+            $backupExist = '<div class="mdui-chip"><span class="mdui-chip-icon mdui-color-red"><i class="mdui-icon material-icons">backup</i></span><span 
+        class="mdui-chip-title mdui-text-color-red">数据库没有插件配置备份</span></div>';
+        }
+
+        echo <<<EOF
+<div class="mdui-card">
+  <div class="mdui-card-media">
+    <img src="https://ae01.alicdn.com/kf/H07926922932545d993267d5c1ab5b9276.jpg"/>
+    <div class="mdui-card-media-covered mdui-card-media-covered-transparent">
+      <div class="mdui-card-primary">
+        <div class="mdui-card-primary-title">Notice</div>
+        <div class="mdui-card-primary-subtitle">欢迎使用 Notice 插件</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="mdui-card-content">
+  
+  {$backupExist}
+  </div>
+  <div class="mdui-card-actions">
+    <button class="mdui-btn mdui-ripple" mdui-tooltip="{content: '唯一指定发布源'}"><a href = "https://github.com/RainshawGao/Typecho-Plugin-Notice">Github</a></button>
+    <button class="mdui-btn mdui-ripple" mdui-tooltip="{content: '欢迎来踩博客～'}"><a href = "https://blog.ruixiaolu.com/">作者博客</a></button>
+    <button class="mdui-btn mdui-ripple showSettings" mdui-tooltip="{content: '展开所有设置后，使用 ctrl + F 可以快速搜索某一设置项'}">展开所有设置</button>
+    <button class="mdui-btn mdui-ripple hideSettings">折叠所有设置</button>
+    <button class = "mdui-btn mdui-ripple recover_backup" mdui-tooltip="{content: '从数据库插件配置备份恢复数据'}">从备份恢复配置</button>
+    <button class = "mdui-btn mdui-ripple backup" mdui-tooltip="{content: '1. 仅仅是备份Notice的设置</br>2. 禁用插件的时候，设置数据会清空但是备份设置不会被删除。</br>3. 所以当你重启启用插件时，可以恢复备份设置。</br>4. 备份设置同样是备份到数据库中。</br>5. 如果已有备份设置，再次备份会覆盖之前备份<br/>6. 插件开发过程中会尽量保证配置项不发生较大改变～'}">备份插件配置</button>
+    <button class = "mdui-btn mdui-ripple del_backup" mdui-tooltip="{content:'删除handsome备份数据'}">删除现有Notice插件配置备份</button>
+  </div>
+  
+</div>
+EOF;
+
+    }
+
+    public static function script(Typecho_Widget_Helper_Form $form){
+
+        $blog_url = Helper::options()->siteUrl;
+        $action_url = $blog_url . 'action/' . Notice_Plugin::$action_setting;
+        echo<<<EOF
+<script>
+    $(function(){
+         $('.showSettings').bind('click',function() {
+           $('.mdui-panel-item').addClass('mdui-panel-item-open');
+         });
+         $('.hideSettings').bind('click',function() {
+            $('.mdui-panel-item').removeClass('mdui-panel-item-open');
+         });
+     });
+    $('.backup').click(function() {
+         mdui.confirm("确认要备份数据吗", "备份数据", function() {
+           $.ajax({
+            url: '$action_url',
+            data: {"do":"backup"},
+            success: function(data) {
+                if (data !== "-1"){
+                    mdui.snackbar({
+                    message: '备份成功，操作码:' + data +',正在刷新页面……',
+                    position: 'bottom'
+                });
+                    setTimeout(function (){
+                    location.reload();
+                },1000);
+                }else {
+                    mdui.snackbar({
+                    message: '备份失败,错误码' + data,
+                    position: 'bottom'
+                });
+                }
+            }
+        })
+         },null , {"confirmText":"确认","cancelText":"取消"})
+
+     });
+     
+     
+     $('.del_backup').click(function() {
+         
+         mdui.confirm("确认要删除备份数据吗", "删除备份", function() {
+            $.ajax({
+            url: '$action_url',
+            data: {"do":"del_backup"},
+            success: function(data) {
+                if (data !== "-1"){
+                    mdui.snackbar({
+                    message: '删除备份成功，操作码:' + data +',正在刷新页面……',
+                    position: 'bottom'
+                });
+                    setTimeout(function (){
+                    location.reload();
+                },1000);
+                }else {
+                    var message = "没有备份，你删什么删，别问我为什么这么冲，因为总有问我为啥删除失败，对不起。";
+                    mdui.snackbar({
+                    message: message,
+                    position: 'bottom'
+                });
+                }
+            }
+        })
+},null , {"confirmText":"确认","cancelText":"取消"});
+         
+});
+     
+     $('.recover_backup').click(function() {
+         
+         
+        mdui.confirm("确认要恢复备份数据吗", "恢复备份", function() {
+    $.ajax({
+        url: '$action_url',
+        data: {"do":"recover_backup"},
+        success: function(data) {
+            if (data !== "-1"){
+                mdui.snackbar({
+                    message: '恢复备份成功，操作码:' + data +',正在刷新页面……',
+                    position: 'bottom'
+                });
+                setTimeout(function (){
+                    location.reload();
+                },1000);
+            }else {
+                mdui.snackbar({
+                    message: '恢复备份失败,错误码' + data,
+                    position: 'bottom'
+                });
+            }
+        }
+    })
+
+},null , {"confirmText":"确认","cancelText":"取消"})
+     });
+</script>
+EOF;
 
     }
 

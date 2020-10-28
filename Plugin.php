@@ -5,19 +5,22 @@ require_once 'libs/phpmailer/SMTP.php';
 require_once 'libs/phpmailer/Exception.php';
 require_once 'libs/Config.php';
 
-define('__TYPECHO_PLUGIN_NOTICE_VERSION__', '0.4.1');
+define('__TYPECHO_PLUGIN_NOTICE_VERSION__', '0.5.0');
 
 /**
  * <strong style="color:#28B7FF;font-family: 楷体;">评论通知</strong>
  *
  * @package Notice
  * @author <strong style="color:#28B7FF;font-family: 楷体;">Rainshaw</strong>
- * @version 0.4.1
+ * @version 0.5.0
  * @link https://github.com/RainshawGao
  * @dependence 18.10.23
  */
 class Notice_Plugin implements Typecho_Plugin_Interface
 {
+    /** @var string 插件配置action前缀 */
+    public static $action_setting='Plugin-Notice-Setting';
+
     /**
      * 激活插件方法,如果激活失败,直接抛出异常
      *
@@ -39,6 +42,9 @@ class Notice_Plugin implements Typecho_Plugin_Interface
         Typecho_Plugin::factory('Widget_Service')->sendQmsg = array(__CLASS__, 'sendQmsg');
         Typecho_Plugin::factory('Widget_Service')->sendMail = array(__CLASS__, 'sendMail');
         Typecho_Plugin::factory('Widget_Service')->sendApprovedMail = array(__CLASS__, 'sendApprovedMail');
+
+        Helper::addAction(self::$action_setting, 'Notice_libs_SettingAction');
+
         return '<div id="AS-SW" style="border-radius:2px;box-shadow:1px 1px 50px rgba(0,0,0,.3);background-color: #fff;width: auto; height: auto; z-index: 2501554; position: fixed; margin-left: -125px; margin-top: -75px; left: 50%; top: 50%;">
                     <div style="text-align: center;height:42px;line-height:42px;border-bottom:1px solid #eee;font-size:14px;overflow:hidden;border-radius:2px 2px 0 0;font-weight:bold;position:relative;cursor:move;min-width:200px;box-sizing:border-box;background-color:#28B7FF;color:#fff;">
                         ' . $s . '
@@ -67,8 +73,8 @@ class Notice_Plugin implements Typecho_Plugin_Interface
      */
     public static function deactivate()
     {
+        Helper::removeAction('Notice-setting');
         $delDB = Helper::options()->plugin('Notice')->delDB;
-
         if ($delDB == 1) {
             $s = self::dbUninstall();
         } else {
@@ -99,8 +105,11 @@ class Notice_Plugin implements Typecho_Plugin_Interface
      */
     public static function config(Typecho_Widget_Helper_Form $form)
     {
+        // CSS
         Notice_Config::style($form);
+        // header
         Notice_Config::header($form);
+        // 配置开始
         $form->addItem(new MDCustomLabel('<div class="mdui-panel" mdui-panel="">'));
         {
             // 插件配置
@@ -116,10 +125,12 @@ class Notice_Plugin implements Typecho_Plugin_Interface
             Notice_Config::SMTP($form);
         }
         $form->addItem(new Typecho_Widget_Helper_Layout('/div'));
-
+        // 美化提交按钮
         $submit = new Typecho_Widget_Helper_Form_Element_Submit(NULL, NULL, _t('保存设置'));
         $submit->input->setAttribute('class', 'mdui-btn mdui-color-theme-accent mdui-ripple submit_only');
         $form->addItem($submit);
+        // javascript
+        Notice_Config::script($form);
 
     }
 
@@ -508,7 +519,7 @@ class Notice_Plugin implements Typecho_Plugin_Interface
             if ($data) {
                 $data = json_decode($data, true);
                 if ($date - $data['time'] < 86400) {
-                    if ($data['version'] != __TYPECHO_PLUGIN_NOTICE_VERSION__) {
+                    if ($data['version'] > __TYPECHO_PLUGIN_NOTICE_VERSION__) {
                         echo '<a href="https://github.com/RainshawGao/Typecho-Plugin-Notice/releases">Notice插件有更新</a>';
                         return;
                     } else {
@@ -523,7 +534,7 @@ class Notice_Plugin implements Typecho_Plugin_Interface
                 "time" => $date
             ));
             file_put_contents(__DIR__ . '/cache/version.json', $data);
-            if ($tag != __TYPECHO_PLUGIN_NOTICE_VERSION__) {
+            if ($tag > __TYPECHO_PLUGIN_NOTICE_VERSION__) {
                 echo '<a href="https://github.com/RainshawGao/Typecho-Plugin-Notice/releases">Notice插件有更新</a>';
                 return;
             } else {

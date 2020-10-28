@@ -24,10 +24,22 @@ class Notice_Config
         $db = Typecho_Db::get();
         if ($db->fetchRow($db->select()->from('table.options')->where('name = ?', 'plugin:Notice-Backup'))) {
             $backupExist = '<div class="mdui-chip"><span class="mdui-chip-icon mdui-color-green"><i class="mdui-icon material-icons">backup</i></span><span
-        class="mdui-chip-title mdui-text-color-green">数据库中存在插件配置备份</span></div>';
+        class="mdui-chip-title mdui-text-color-light-blue">数据库中存在插件配置备份</span></div>';
         } else {
             $backupExist = '<div class="mdui-chip"><span class="mdui-chip-icon mdui-color-red"><i class="mdui-icon material-icons">backup</i></span><span 
         class="mdui-chip-title mdui-text-color-red">数据库没有插件配置备份</span></div>';
+        }
+        $tag = Version::getNewRelease();
+        $tag_compare = version_compare(__TYPECHO_PLUGIN_NOTICE_VERSION__, $tag);
+        if ($tag_compare<0){
+            $update = '<div class="mdui-chip"><span class="mdui-chip-icon mdui-color-red"><i class="mdui-icon material-icons">system_update_alt</i></span>
+                <span class="mdui-chip-title mdui-text-color-red">新版本'.$tag.'已可用</span></div>';
+        }elseif ($tag_compare==0){
+            $update = '<div class="mdui-chip"><span class="mdui-chip-icon mdui-color-green"><i class="mdui-icon material-icons">cloud_done</i></span>
+                <span class="mdui-chip-title mdui-text-color-light-blue">当前是最新版本</span></div>';
+        }else{
+            $update = '<div class="mdui-chip"><span class="mdui-chip-icon mdui-color-amber"><i class="mdui-icon material-icons">warning</i></span>
+                <span class="mdui-chip-title mdui-text-color-cyan">您当前正在使用测试版</span></div>';
         }
 
         echo <<<EOF
@@ -43,7 +55,7 @@ class Notice_Config
   </div>
   
   <div class="mdui-card-content">
-  
+  {$update}
   {$backupExist}
   </div>
   <div class="mdui-card-actions">

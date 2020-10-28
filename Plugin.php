@@ -4,15 +4,18 @@ require_once 'libs/phpmailer/PHPMailer.php';
 require_once 'libs/phpmailer/SMTP.php';
 require_once 'libs/phpmailer/Exception.php';
 require_once 'libs/Config.php';
+require 'libs/db.php';
+require 'libs/Version.php';
+require 'libs/Utils.php';
 
-define('__TYPECHO_PLUGIN_NOTICE_VERSION__', '0.5.0');
+define('__TYPECHO_PLUGIN_NOTICE_VERSION__', '0.5.1');
 
 /**
  * <strong style="color:#28B7FF;font-family: 楷体;">评论通知</strong>
  *
  * @package Notice
  * @author <strong style="color:#28B7FF;font-family: 楷体;">Rainshaw</strong>
- * @version 0.5.0
+ * @version 0.5.1
  * @link https://github.com/RainshawGao
  * @dependence 18.10.23
  */
@@ -30,9 +33,7 @@ class Notice_Plugin implements Typecho_Plugin_Interface
      */
     public static function activate()
     {
-        $s = self::dbInstall();
-        // 更新提示
-        Typecho_Plugin::factory('admin/menu.php')->navBar = array(__CLASS__, 'updateTip');
+        $s = Notice_DB::dbInstall();
         // 通知触发函数
         Typecho_Plugin::factory('Widget_Feedback')->finishComment = array(__CLASS__, 'requestService');
         Typecho_Plugin::factory('Widget_Comments_Edit')->finishComment = array(__CLASS__, 'requestService');
@@ -76,7 +77,8 @@ class Notice_Plugin implements Typecho_Plugin_Interface
         Helper::removeAction('Notice-setting');
         $delDB = Helper::options()->plugin('Notice')->delDB;
         if ($delDB == 1) {
-            $s = self::dbUninstall();
+
+            $s = Notice_DB::dbUninstall();
         } else {
             $s = _t('您的设置为不删除数据库！插件卸载成功！');
         }
@@ -192,9 +194,7 @@ class Notice_Plugin implements Typecho_Plugin_Interface
     public static function approvedMail($comment, $edit, $status)
     {
         if ('approved' === $status) {
-            self::log($comment['coid'], 0, 0);
             Helper::requestService('sendApprovedMail', $comment['coid']);
-            self::log($comment['coid'], 1, 1);
         }
     }
 
@@ -224,7 +224,7 @@ class Notice_Plugin implements Typecho_Plugin_Interface
         }
 
         $msg = $pluginOptions->scMsg;
-        $msg = self::replace($msg, $coid);
+        $msg = Notice_Utils::replace($msg, $coid);
 
         $postdata = http_build_query(
             array(
@@ -243,7 +243,7 @@ class Notice_Plugin implements Typecho_Plugin_Interface
         $context = stream_context_create($opts);
         $result = file_get_contents('https://sc.ftqq.com/' . $key . '.send', false, $context);
 
-        self::log($coid, 'wechat', $result . "\n\n" . $msg);
+        Notice_DB::log($coid, 'wechat', $result . "\n\n" . $msg);
     }
 
     /**
@@ -272,7 +272,7 @@ class Notice_Plugin implements Typecho_Plugin_Interface
         }
 
         $msg = $pluginOptions->QmsgMsg;
-        $msg = self::replace($msg, $coid);
+        $msg = Notice_Utils::replace($msg, $coid);
 
         if ($pluginOptions->QmsgQQ == NULL) {
             $postdata = http_build_query(
@@ -299,27 +299,10 @@ class Notice_Plugin implements Typecho_Plugin_Interface
         $context = stream_context_create($opts);
         $result = file_get_contents('https://qmsg.zendee.cn/send/' . $key, false, $context);
 
-        self::log($coid, 'qq', $result . "\n\n" . $msg);
+        Notice_DB::log($coid, 'qq', $result . "\n\n" . $msg);
     }
 
-    /**
-     * 获取邮件正文模板
-     *
-     * @access private
-     * @param string $template owner为博主，guest为访客
-     * @return string
-     * @throws Typecho_Widget_Exception
-     */
-    private static function getTemplate($template = 'owner')
-    {
-        $template .= '.html';
-        $filename = Helper::options()->pluginDir() . '/Notice/template/' . $template;
-        if (!file_exists($filename)) {
-            throw new Typecho_Widget_Exception('模板文件' . $template . '不存在', 404);
-        }
 
-        return file_get_contents($filename);
-    }
 
     /**
      * 异步发送通知邮件
@@ -371,8 +354,8 @@ class Notice_Plugin implements Typecho_Plugin_Interface
                 $post = Helper::widgetById('contents', $comment->cid);
                 $mail->addAddress($post->author->mail, $post->author->name);
                 // 构造邮件
-                $mail->Subject = self::replace($pluginOptions->titleForOwner, $coid);
-                $mail->Body = self::replace(self::getTemplate('owner'), $coid);
+                $mail->Subject = Notice_Utils::replace($pluginOptions->titleForOwner, $coid);
+                $mail->Body = Notice_Utils::replace(Notice_Utils::getTemplate('owner'), $coid);
                 $mail->AltBody = "作者：" .
                     $comment->author . "\r\n链接：" .
                     $comment->permalink .
@@ -387,8 +370,8 @@ class Notice_Plugin implements Typecho_Plugin_Interface
                 $parent = Helper::widgetById('comments', $comment->parent);
                 $mail->addAddress($parent->mail, $parent->author);
                 // 构造邮件
-                $mail->Subject = self::replace($pluginOptions->titleForGuest, $coid);
-                $mail->Body = self::replace(self::getTemplate('guest'), $coid);
+                $mail->Subject = Notice_Utils::replace($pluginOptions->titleForGuest, $coid);
+                $mail->Body = Notice_Utils::replace(Notice_Utils::getTemplate('guest'), $coid);
                 $mail->AltBody = "作者：" .
                     $comment->author .
                     "\r\n链接：" .
@@ -443,221 +426,12 @@ class Notice_Plugin implements Typecho_Plugin_Interface
         $mail->setFrom($pluginOptions->from, $pluginOptions->from_name);
 
         $mail->addAddress($comment->mail, $comment->author);
-        $mail->Subject = self::replace($pluginOptions->titleForApproved, $coid);
-        $mail->Body = self::replace(self::getTemplate('approved'), $coid);
+        $mail->Subject = Notice_Utils::replace($pluginOptions->titleForApproved, $coid);
+        $mail->Body = Notice_Utils::replace(Notice_Utils::getTemplate('approved'), $coid);
         $mail->AltBody = "您的评论已通过审核。\n";
         $mail->send();
     }
 
-    /**
-     * 替换内容
-     *
-     * @access private
-     * @param string $str 模版
-     * @param integer $coid 评论ID
-     * @return string
-     */
-    private static function replace($str, $coid)
-    {
-        $comment = Helper::widgetById('comments', $coid);
-        $date = new Typecho_Date();
-        $time = $date->format('Y-m-d H:i:s');
-        $parent = $comment;
-        if ($comment->parent) {
-            $parent = Helper::widgetById('comments', $comment->parent);
-        }
-        $status = array(
-            "approved" => "通过",
-            "waiting" => "待审",
-            "spam" => "垃圾"
-        );
-        $search = array(
-            "{siteTitle}",
-            "{title}",
-            "{author}",
-            "{author_p}",
-            "{ip}",
-            "{mail}",
-            "{permalink}",
-            "{manage}",
-            "{text}",
-            "{text_p}",
-            "{time}",
-            "{status}"
-        );
-        $replace = array(
-            Helper::options()->title,
-            $comment->title,
-            $comment->author,
-            $parent->author,
-            $comment->ip,
-            $comment->mail,
-            $comment->permalink,
-            Helper::options()->siteUrl . __TYPECHO_ADMIN_DIR__ . "manage-comments.php",
-            $comment->text,
-            $parent->text,
-            $time,
-            $status[$comment->status]
-        );
-        return str_replace($search, $replace, $str);
-    }
 
-    /**
-     * 更新提示
-     *
-     * @access public
-     * @return void
-     * @throws Typecho_Plugin_Exception
-     */
-    public static function updateTip()
-    {
-        $option = Helper::options()->plugin('Notice');
-        if (in_array('updatetip', $option->setting)) {
-            $date = new Typecho_Date();
-            $date = $date->timeStamp;
-            $data = file_get_contents(__DIR__ . '/cache/version.json');
-            if ($data) {
-                $data = json_decode($data, true);
-                if ($date - $data['time'] < 86400) {
-                    if ($data['version'] > __TYPECHO_PLUGIN_NOTICE_VERSION__) {
-                        echo '<a href="https://github.com/RainshawGao/Typecho-Plugin-Notice/releases">Notice插件有更新</a>';
-                        return;
-                    } else {
-                        return;
-                    }
-                }
-            }
-            //
-            $tag = self::getNewRelease();
-            $data = json_encode(array(
-                "version" => $tag,
-                "time" => $date
-            ));
-            file_put_contents(__DIR__ . '/cache/version.json', $data);
-            if ($tag > __TYPECHO_PLUGIN_NOTICE_VERSION__) {
-                echo '<a href="https://github.com/RainshawGao/Typecho-Plugin-Notice/releases">Notice插件有更新</a>';
-                return;
-            } else {
-                return;
-            }
-
-        }
-    }
-
-    /**
-     * 获取 Github 最新 Release Tag 版本
-     *
-     * @access private
-     * @return string
-     */
-    private static function getNewRelease()
-    {
-        $ch = curl_init("https://api.github.com/repos/RainshawGao/Typecho-Plugin-Notice/releases/latest");
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_USERAGENT, "Typecho-Plugin-Notice");
-        $res = curl_exec($ch);
-        $data = json_decode($res, JSON_UNESCAPED_UNICODE);
-        return $data['tag_name'];
-    }
-
-    /**
-     * 数据库初始化
-     *
-     * @access private
-     * @return string
-     * @throws Typecho_Plugin_Exception
-     * @throws Typecho_Db_Exception
-     */
-    private static function dbInstall()
-    {
-        $db = Typecho_Db::get();
-        $prefix = $db->getPrefix();
-        $type = explode('_', $db->getAdapterName());
-        $type = array_pop($type);
-        if ($type != 'Mysql' and $type != 'SQLite') {
-            throw new Typecho_Plugin_Exception('暂不支持当前数据库版本' . $type);
-        }
-        $scripts = file_get_contents('usr/plugins/Notice/scripts/' . $type . '.sql');
-        $scripts = str_replace('typecho_', $prefix, $scripts);
-        $scripts = str_replace('%charset%', 'utf8mb4', $scripts);
-        $scripts = explode(';', $scripts);
-        try {
-            foreach ($scripts as $script) {
-                $script = trim($script);
-                if ($script) {
-                    $db->query($script, Typecho_Db::WRITE);
-                }
-            }
-            return '数据表新建成功，插件启用成功!';
-        } catch (Typecho_Db_Exception $e) {
-            $code = $e->getCode();
-            if (('Mysql' == $type && 1050 == $code) ||
-                ('SQLite' == $type && ('HY000' == $code || 1 == $code))) {
-                try {
-                    $script = 'SELECT `id`, `coid`, `type`, `log` FROM `' . $prefix . 'notice`';
-                    $db->query($script, Typecho_Db::READ);
-                    return '数据表已存在，插件启用成功!';
-                } catch (Typecho_Db_Exception $e) {
-                    throw new Typecho_Plugin_Exception('数据表已存在但格式错误，插件启用失败。错误号：' . $e->getCode());
-                }
-            } else {
-                throw new Typecho_Plugin_Exception('数据表建立失败，插件启用失败。错误号：' . $code);
-            }
-        }
-    }
-
-    /**
-     * 数据库卸载
-     *
-     * @access private
-     * @return string
-     * @throws Typecho_Plugin_Exception
-     * @throws Typecho_Db_Exception
-     */
-    private static function dbUninstall()
-    {
-
-        $db = Typecho_Db::get();
-        $prefix = $db->getPrefix();
-        $type = explode('_', $db->getAdapterName());
-        $type = array_pop($type);
-        if ($type != 'Mysql' and $type != 'SQLite') {
-            throw new Typecho_Plugin_Exception('暂不支持当前数据库版本' . $type);
-        }
-        $scripts = file_get_contents('usr/plugins/Notice/scripts/un' . $type . '.sql');
-        $scripts = str_replace('typecho_', $prefix, $scripts);
-        $scripts = explode(';', $scripts);
-        try {
-            foreach ($scripts as $script) {
-                $script = trim($script);
-                if ($script) {
-                    $db->query($script, Typecho_Db::WRITE);
-                }
-            }
-            return '数据库删除成功!插件卸载成功！';
-        } catch (Typecho_Db_Exception $e) {
-            throw new Typecho_Plugin_Exception('数据表删除失败！错误号：' . $e->getCode() . '插件卸载失败！');
-        }
-    }
-
-    /**
-     * @param integer $coid 评论ID
-     * @param string $type wechat为server酱，mail为邮件
-     * @param string $log 日志
-     * @throws Typecho_Db_Exception
-     */
-    private static function log($coid, $type, $log)
-    {
-        $db = Typecho_Db::get();
-        $prefix = $db->getPrefix();
-
-        $id = $db->query(
-            $db->insert($prefix . 'notice')->rows(array(
-                'coid' => $coid,
-                'type' => $type,
-                'log' => $log
-            ))
-        );
-    }
 
 }

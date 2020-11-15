@@ -63,9 +63,10 @@ class Notice_Config
     <button class="mdui-btn mdui-ripple" mdui-tooltip="{content: '欢迎来踩博客～'}"><a href = "https://blog.ruixiaolu.com/">作者博客</a></button>
     <button class="mdui-btn mdui-ripple showSettings" mdui-tooltip="{content: '展开所有设置后，使用 ctrl + F 可以快速搜索某一设置项'}">展开所有设置</button>
     <button class="mdui-btn mdui-ripple hideSettings">折叠所有设置</button>
-    <button class = "mdui-btn mdui-ripple recover_backup" mdui-tooltip="{content: '从数据库插件配置备份恢复数据'}">从备份恢复配置</button>
-    <button class = "mdui-btn mdui-ripple backup" mdui-tooltip="{content: '1. 仅仅是备份Notice的设置</br>2. 禁用插件的时候，设置数据会清空但是备份设置不会被删除。</br>3. 所以当你重启启用插件时，可以恢复备份设置。</br>4. 备份设置同样是备份到数据库中。</br>5. 如果已有备份设置，再次备份会覆盖之前备份<br/>6. 插件开发过程中会尽量保证配置项不发生较大改变～'}">备份插件配置</button>
-    <button class = "mdui-btn mdui-ripple del_backup" mdui-tooltip="{content:'删除handsome备份数据'}">删除现有Notice插件配置备份</button>
+    <br>
+    <button class = "mdui-btn mdui-ripple mdui-color-light-green recover_backup" mdui-tooltip="{content: '从数据库插件配置备份恢复数据'}">从备份恢复配置</button>
+    <button class = "mdui-btn mdui-ripple mdui-color-yellow-100 backup" mdui-tooltip="{content: '1. 仅仅是备份Notice的设置</br>2. 禁用插件的时候，设置数据会清空但是备份设置不会被删除。</br>3. 所以当你重启启用插件时，可以恢复备份设置。</br>4. 备份设置同样是备份到数据库中。</br>5. 如果已有备份设置，再次备份会覆盖之前备份<br/>6. 插件开发过程中会尽量保证配置项不发生较大改变～'}">备份插件配置</button>
+    <button class = "mdui-btn mdui-ripple mdui-color-red-200 del_backup" mdui-tooltip="{content:'删除handsome备份数据'}">删除现有Notice插件配置备份</button>
   </div>
   
 </div>

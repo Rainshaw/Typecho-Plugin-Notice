@@ -8,14 +8,14 @@ require 'libs/db.php';
 require 'libs/Version.php';
 require 'libs/Utils.php';
 
-define('__TYPECHO_PLUGIN_NOTICE_VERSION__', '0.5.2');
+define('__TYPECHO_PLUGIN_NOTICE_VERSION__', '0.5.3');
 
 /**
  * <strong style="color:#28B7FF;font-family: 楷体;">评论通知</strong>
  *
  * @package Notice
  * @author <strong style="color:#28B7FF;font-family: 楷体;">Rainshaw</strong>
- * @version 0.5.1
+ * @version 0.5.3
  * @link https://github.com/RainshawGao
  * @dependence 18.10.23
  */

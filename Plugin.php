@@ -8,7 +8,7 @@ require 'libs/db.php';
 require 'libs/Version.php';
 require 'libs/Utils.php';
 
-define('__TYPECHO_PLUGIN_NOTICE_VERSION__', '0.5.1');
+define('__TYPECHO_PLUGIN_NOTICE_VERSION__', '0.5.2');
 
 /**
  * <strong style="color:#28B7FF;font-family: 楷体;">评论通知</strong>
@@ -169,16 +169,24 @@ class Notice_Plugin implements Typecho_Plugin_Interface
      */
     public static function requestService($comment)
     {
+        Notice_DB::log($comment->coid, '评论异步请求开始', '');
         $options = Helper::options()->plugin('Notice');
         if (in_array('mail', $options->setting) && !empty($options->host)) {
+            Notice_DB::log($comment->coid, '发送邮件开始', '');
             Helper::requestService('sendMail', $comment->coid);
+            Notice_DB::log($comment->coid, '发送邮件结束', '');
         }
         if (in_array('serverchan', $options->setting) && !empty($options->scKey)) {
+            Notice_DB::log($comment->coid, 'Server酱通知开始', '');
             Helper::requestService('sendSC', $comment->coid);
+            Notice_DB::log($comment->coid, 'Server酱通知结束', '');
         }
         if (in_array('qmsg', $options->setting) && !empty($options->QmsgKey)) {
+            Notice_DB::log($comment->coid, 'Qmsg酱通知开始', '');
             Helper::requestService('sendQmsg', $comment->coid);
+            Notice_DB::log($comment->coid, 'Qmsg酱通知结束', '');
         }
+        Notice_DB::log($comment->coid, '评论异步请求结束', '');
     }
 
     /**
@@ -193,9 +201,11 @@ class Notice_Plugin implements Typecho_Plugin_Interface
      */
     public static function approvedMail($comment, $edit, $status)
     {
+        Notice_DB::log($comment->coid, '评论通过异步请求开始', '');
         if ('approved' === $status) {
             Helper::requestService('sendApprovedMail', $comment['coid']);
         }
+        Notice_DB::log($comment->coid, '评论通过异步请求结束', '');
     }
 
     /**
@@ -362,6 +372,7 @@ class Notice_Plugin implements Typecho_Plugin_Interface
                     "\r\n评论：\r\n" .
                     $comment->text;
                 $mail->send();
+                Notice_DB::log($coid, 'mail', $mail->Body);
             }
         } else {
             // 某评论有新的子评论，向父评论发信
@@ -379,6 +390,7 @@ class Notice_Plugin implements Typecho_Plugin_Interface
                     "\r\n评论：\r\n" .
                     $comment->text;
                 $mail->send();
+                Notice_DB::log($coid, 'mail', $mail->Body);
             }
         }
     }
@@ -430,6 +442,7 @@ class Notice_Plugin implements Typecho_Plugin_Interface
         $mail->Body = Notice_Utils::replace(Notice_Utils::getTemplate('approved'), $coid);
         $mail->AltBody = "您的评论已通过审核。\n";
         $mail->send();
+        Notice_DB::log($coid, 'mail', $mail->Body);
     }
 
 

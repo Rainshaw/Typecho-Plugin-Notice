@@ -45,7 +45,7 @@ class Notice_Config
         echo <<<EOF
 <div class="mdui-card">
   <div class="mdui-card-media">
-    <img src="https://ae01.alicdn.com/kf/H07926922932545d993267d5c1ab5b9276.jpg"/>
+    <img src="https://i.loli.net/2020/11/20/17Sg53qNMmPDJsv.jpg"/>
     <div class="mdui-card-media-covered mdui-card-media-covered-transparent">
       <div class="mdui-card-primary">
         <div class="mdui-card-primary-title">Notice</div>

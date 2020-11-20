@@ -8,16 +8,16 @@ require 'libs/db.php';
 require 'libs/Version.php';
 require 'libs/Utils.php';
 
-define('__TYPECHO_PLUGIN_NOTICE_VERSION__', '0.5.3');
+define('__TYPECHO_PLUGIN_NOTICE_VERSION__', '0.5.4');
 
 /**
  * <strong style="color:#28B7FF;font-family: 楷体;">评论通知</strong>
  *
  * @package Notice
  * @author <strong style="color:#28B7FF;font-family: 楷体;">Rainshaw</strong>
- * @version 0.5.3
+ * @version 0.5.4
  * @link https://github.com/RainshawGao
- * @dependence 18.10.23
+ * @dependence 17.12.8-*
  */
 class Notice_Plugin implements Typecho_Plugin_Interface
 {
@@ -201,11 +201,11 @@ class Notice_Plugin implements Typecho_Plugin_Interface
      */
     public static function approvedMail($comment, $edit, $status)
     {
-        Notice_DB::log($comment->coid, '评论通过异步请求开始', '');
+        Notice_DB::log($comment['coid'], '评论通过异步请求开始', '');
         if ('approved' === $status) {
             Helper::requestService('sendApprovedMail', $comment['coid']);
         }
-        Notice_DB::log($comment->coid, '评论通过异步请求结束', '');
+        Notice_DB::log($comment['coid'], '评论通过异步请求结束', '');
     }
 
     /**
@@ -403,7 +403,7 @@ class Notice_Plugin implements Typecho_Plugin_Interface
      * @return void
      * @throws Typecho_Plugin_Exception
      * @throws Typecho_Widget_Exception
-     * @throws \PHPMailer\PHPMailer\Exception
+     * @throws \PHPMailer\PHPMailer\Exception|Typecho_Db_Exception
      */
     public static function sendApprovedMail($coid)
     {

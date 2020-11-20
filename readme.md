@@ -23,9 +23,10 @@ Notice 是 Typecho 评论通知插件，支持 SMTP、Server酱、Qmsg酱 两种
 - [x] Server酱推送
 - [x] QQ 推送
 - [x] Server酱、Qmsg酱推送模版
-- [ ] 邮件推送测试
-- [ ] Server 酱推送测试
-- [ ] 在线编辑模版文件
+- [x] 邮件推送测试
+- [x] Server 酱推送测试
+- [x] Qmsg 酱推送测试
+- [x] 在线编辑模版文件
 - [ ] 企业微信推送
 - [ ] 钉钉推送
 - [ ] 自定义推送

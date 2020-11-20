@@ -8,14 +8,14 @@ require 'libs/db.php';
 require 'libs/Version.php';
 require 'libs/Utils.php';
 
-define('__TYPECHO_PLUGIN_NOTICE_VERSION__', '0.5.4');
+define('__TYPECHO_PLUGIN_NOTICE_VERSION__', '0.6.0');
 
 /**
  * <strong style="color:#28B7FF;font-family: 楷体;">评论通知</strong>
  *
  * @package Notice
  * @author <strong style="color:#28B7FF;font-family: 楷体;">Rainshaw</strong>
- * @version 0.5.4
+ * @version 0.6.0
  * @link https://github.com/RainshawGao
  * @dependence 17.12.8-*
  */
@@ -23,6 +23,18 @@ class Notice_Plugin implements Typecho_Plugin_Interface
 {
     /** @var string 插件配置action前缀 */
     public static $action_setting='Plugin-Notice-Setting';
+
+    /** @var string 插件测试action前缀 */
+    public static $action_test='Plugin-Notice-Test';
+
+    /** @var string 编辑插件模版action前缀 */
+    public static $action_edit_template='Plugin-Notice-Edit-Template';
+
+    /** @var string 插件编辑模板面板 */
+    public static $panel_edit_template = 'Notice/page/edit-template.php';
+
+    /** @var string 插件测试面板 */
+    public static $panel_test = 'Notice/page/test.php';
 
     /**
      * 激活插件方法,如果激活失败,直接抛出异常
@@ -45,6 +57,11 @@ class Notice_Plugin implements Typecho_Plugin_Interface
         Typecho_Plugin::factory('Widget_Service')->sendApprovedMail = array(__CLASS__, 'sendApprovedMail');
 
         Helper::addAction(self::$action_setting, 'Notice_libs_SettingAction');
+        Helper::addAction(self::$action_test, 'Notice_libs_TestAction');
+        Helper::addAction(self::$action_edit_template, 'Notice_libs_TestAction');
+        $index = Helper::addMenu(__CLASS__);
+        Helper::addPanel($index, self::$panel_edit_template, '编辑邮件模版', NULL, 'administrator');
+        Helper::addPanel($index, self::$panel_test, '配置测试', NULL, 'administrator');
 
         return '<div id="AS-SW" style="border-radius:2px;box-shadow:1px 1px 50px rgba(0,0,0,.3);background-color: #fff;width: auto; height: auto; z-index: 2501554; position: fixed; margin-left: -125px; margin-top: -75px; left: 50%; top: 50%;">
                     <div style="text-align: center;height:42px;line-height:42px;border-bottom:1px solid #eee;font-size:14px;overflow:hidden;border-radius:2px 2px 0 0;font-weight:bold;position:relative;cursor:move;min-width:200px;box-sizing:border-box;background-color:#28B7FF;color:#fff;">
@@ -74,10 +91,15 @@ class Notice_Plugin implements Typecho_Plugin_Interface
      */
     public static function deactivate()
     {
-        Helper::removeAction('Notice-setting');
+        Helper::removeAction(self::$action_setting);
+        Helper::removeAction(self::$action_test);
+        Helper::removeAction(self::$action_edit_template);
+        $index = Helper::removeMenu(__CLASS__);
+        Helper::removePanel($index, self::$panel_edit_template);
+        Helper::removePanel($index, self::$panel_test);
+
         $delDB = Helper::options()->plugin('Notice')->delDB;
         if ($delDB == 1) {
-
             $s = Notice_DB::dbUninstall();
         } else {
             $s = _t('您的设置为不删除数据库！插件卸载成功！');
@@ -257,7 +279,7 @@ class Notice_Plugin implements Typecho_Plugin_Interface
     }
 
     /**
-     * 异步发送微信 Powered By Server酱
+     * 异步发送QQ Powered By Server酱
      *
      * @param integer $coid 评论ID
      * @return void
@@ -444,7 +466,4 @@ class Notice_Plugin implements Typecho_Plugin_Interface
         $mail->send();
         Notice_DB::log($coid, 'mail', $mail->Body);
     }
-
-
-
 }

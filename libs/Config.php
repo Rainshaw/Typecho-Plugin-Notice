@@ -1,11 +1,11 @@
 <?php
 /*表单组件*/
-require("formelement/MDFormElements.php");
-require('formelement/MDCheckbox.php');
-require('formelement/MDText.php');
-require('formelement/MDRadio.php');
-require('formelement/MDSelect.php');
-require('formelement/MDTextarea.php');
+require_once("formelement/MDFormElements.php");
+require_once('formelement/MDCheckbox.php');
+require_once('formelement/MDText.php');
+require_once('formelement/MDRadio.php');
+require_once('formelement/MDSelect.php');
+require_once('formelement/MDTextarea.php');
 
 class Notice_Config
 {
@@ -235,7 +235,8 @@ EOF;
     {
         $form->addItem(new MDTitle('Qmsg酱配置', 'QmsgKEY、QmsgQQ、Qmsg酱通知模版', false));
         $QmsgKey = new MDText('QmsgKey', NULL, NULL, _t('QmsgKey'),
-            _t('请进入 <a href="https://qmsg.zendee.cn/api">Qmsg酱文档</a> 获取您的 KEY: https://qmsg.zendee.cn:443/send/{QmsgKey}'));
+            _t('请进入 <a href="https://qmsg.zendee.cn/api">Qmsg酱文档</a> 获取您的 KEY: https://qmsg.zendee.cn:443/send/{QmsgKey}<br>
+                请注意此处只需填写key即可，不要填整个链接！！'));
         $form->addInput($QmsgKey);
 
         $QmsgQQ = new MDText('QmsgQQ', NULL, NULL, _t('QmsgQQ'),

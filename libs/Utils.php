@@ -1,5 +1,7 @@
 <?php
-class Notice_Utils{
+
+class Notice_Utils
+{
 
     /**
      * 获取邮件正文模板
@@ -29,6 +31,7 @@ class Notice_Utils{
      * @param integer $coid 评论ID
      * @return string
      */
+
     public static function replace($str, $coid)
     {
         $comment = Helper::widgetById('comments', $coid);
@@ -43,20 +46,6 @@ class Notice_Utils{
             "waiting" => "待审",
             "spam" => "垃圾"
         );
-        $search = array(
-            "{siteTitle}",
-            "{title}",
-            "{author}",
-            "{author_p}",
-            "{ip}",
-            "{mail}",
-            "{permalink}",
-            "{manage}",
-            "{text}",
-            "{text_p}",
-            "{time}",
-            "{status}"
-        );
         $replace = array(
             Helper::options()->title,
             $comment->title,
@@ -70,6 +59,25 @@ class Notice_Utils{
             $parent->text,
             $time,
             $status[$comment->status]
+        );
+        return Notice_Utils::replaceArray($str, $replace);
+    }
+
+    public static function replaceArray($str, $replace)
+    {
+        $search = array(
+            "{siteTitle}",
+            "{title}",
+            "{author}",
+            "{author_p}",
+            "{ip}",
+            "{mail}",
+            "{permalink}",
+            "{manage}",
+            "{text}",
+            "{text_p}",
+            "{time}",
+            "{status}"
         );
         return str_replace($search, $replace, $str);
     }

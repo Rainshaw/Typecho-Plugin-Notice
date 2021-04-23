@@ -203,15 +203,15 @@ EOF;
 
     public static function Serverchan(Typecho_Widget_Helper_Form $form)
     {
-        $form->addItem(new MDTitle('Server酱配置', 'SCKEY、Server酱通知模版', false));
+        $form->addItem(new MDTitle('Server酱Turbo配置', 'SCKEY、Server酱Turbo通知模版<span style="color:red"><a href="https://sc.ftqq.com/9.version">Server酱升级！</a>请重新配置本项</span>', false));
         $scKey = new MDText('scKey', NULL, NULL, _t('Server酱SCKEY'),
-            _t('想要获取 SCKEY 则需要在 <a href="https://sc.ftqq.com/">Server酱</a> 使用 Github 账户登录<br>
-                同时，注册后需要在 <a href="http://sc.ftqq.com/">Server酱</a> 绑定你的微信号才能收到推送'));
+            _t('想要获取 SCKEY 则需要在 <a href="https://sct.ftqq.com/">Server酱Turbo版</a>登录并进行捐赠<br>
+                同时，注册后需要在 <a href="http://sct.ftqq.com/">Server酱Turbo版</a> 绑定你的微信号才能收到推送'));
         $form->addInput($scKey);
 
         $scMsg = new MDTextarea('scMsg', NULL,
             "评论人：**{author}**\n\n 评论内容:\n> {text}\n\n链接：{permalink}",
-            _t("Server酱通知模版"), _t("通过server酱通知您的内容模版，可使用变量列表见插件说明")
+            _t("Server酱Turbo通知模版"), _t("通过server酱Turbo通知您的内容模版，可使用变量列表见插件说明")
         );
         $form->addInput($scMsg);
         $form->addItem(new Typecho_Widget_Helper_Layout('/div'));

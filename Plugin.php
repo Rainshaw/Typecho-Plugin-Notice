@@ -273,7 +273,7 @@ class Notice_Plugin implements Typecho_Plugin_Interface
             )
         );
         $context = stream_context_create($opts);
-        $result = file_get_contents('https://sc.ftqq.com/' . $key . '.send', false, $context);
+        $result = file_get_contents('https://sctapi.ftqq.com/' . $key . '.send', false, $context);
 
         Notice_DB::log($coid, 'wechat', $result . "\n\n" . $msg);
     }

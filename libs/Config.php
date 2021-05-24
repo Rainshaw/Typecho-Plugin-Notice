@@ -235,12 +235,12 @@ EOF;
     {
         $form->addItem(new MDTitle('Qmsg酱配置', 'QmsgKEY、QmsgQQ、Qmsg酱通知模版', false));
         $QmsgKey = new MDText('QmsgKey', NULL, NULL, _t('QmsgKey'),
-            _t('请进入 <a href="https://qmsg.zendee.cn/api">Qmsg酱文档</a> 获取您的 KEY: https://qmsg.zendee.cn:443/send/{QmsgKey}<br>
+            _t('请进入 <a href="https://qmsg.zendee.cn/api.html">Qmsg酱文档</a> 获取您的 KEY: https://qmsg.zendee.cn:443/send/{QmsgKey}<br>
                 请注意此处只需填写key即可，不要填整个链接！！'));
         $form->addInput($QmsgKey);
 
         $QmsgQQ = new MDText('QmsgQQ', NULL, NULL, _t('QmsgQQ'),
-            _t('请进入 <a href="https://qmsg.zendee.cn/me">Qmsg酱</a> 选择机器人QQ号，使用您接收通知的QQ号添加其为好友，并将该QQ号添加到该页面下方QQ号列表中<br/>
+            _t('请进入 <a href="https://qmsg.zendee.cn/me.html">Qmsg酱</a> 选择机器人QQ号，使用您接收通知的QQ号添加其为好友，并将该QQ号添加到该页面下方QQ号列表中<br/>
                 如果您有多个应用，且在该网站上增加了许多QQ号，您可以在这里填写本站点推送的QQ号（用英文逗号分割，最后不需要加逗号），不填则向该网站列表中所有的QQ号发送消息'));
         $form->addInput($QmsgQQ);
 

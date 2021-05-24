@@ -279,7 +279,7 @@ class Notice_Plugin implements Typecho_Plugin_Interface
     }
 
     /**
-     * 异步发送QQ Powered By Server酱
+     * 异步发送QQ Powered By Qmsg酱
      *
      * @param integer $coid 评论ID
      * @return void
@@ -306,20 +306,11 @@ class Notice_Plugin implements Typecho_Plugin_Interface
         $msg = $pluginOptions->QmsgMsg;
         $msg = Notice_Utils::replace($msg, $coid);
 
-        if ($pluginOptions->QmsgQQ == NULL) {
-            $postdata = http_build_query(
-                array(
-                    'msg' => $msg
-                )
-            );
-        } else {
-            $postdata = http_build_query(
-                array(
-                    'msg' => $msg,
-                    'qq' => $pluginOptions->QmsgQQ
-                )
-            );
-        }
+        $postdata = http_build_query(
+            array(
+                'msg' => $msg
+            )
+        );
 
         $opts = array('http' =>
             array(

@@ -261,20 +261,11 @@ class Notice_libs_TestAction extends Typecho_Widget implements Widget_Interface_
             $this->response->goBack();
         }
         $msg = self::replace('qmsg');
-        if ($this->_pluginOption->QmsgQQ == NULL) {
-            $postdata = http_build_query(
-                array(
-                    'msg' => $msg
-                )
-            );
-        } else {
-            $postdata = http_build_query(
-                array(
-                    'msg' => $msg,
-                    'qq' => $this->_pluginOption->QmsgQQ
-                )
-            );
-        }
+        $postdata = http_build_query(
+            array(
+                'msg' => $msg
+            )
+        );
 
         $opts = array('http' =>
             array(

@@ -8,16 +8,16 @@ require 'libs/db.php';
 require 'libs/Version.php';
 require 'libs/Utils.php';
 
-define('__TYPECHO_PLUGIN_NOTICE_VERSION__', '0.7.2');
+define('__TYPECHO_PLUGIN_NOTICE_VERSION__', '0.7.3');
 
 /**
  * <strong style="color:#28B7FF;font-family: 楷体;">评论通知</strong>
  *
  * @package Notice
  * @author <strong style="color:#28B7FF;font-family: 楷体;">Rainshaw</strong>
- * @version 0.7.2
+ * @version 0.7.3
  * @link https://github.com/RainshawGao
- * @dependence 17.12.8-*
+ * @since 1.2.0
  */
 class Notice_Plugin implements Typecho_Plugin_Interface
 {

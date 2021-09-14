@@ -78,7 +78,7 @@ class MDRadio extends Typecho_Widget_Helper_Form_Element
      * @param array $options 选择项
      * @return Typecho_Widget_Helper_Layout
      */
-    public function input($name = NULL, array $options = NULL)
+    public function input($name = NULL, array $options = NULL):?Typecho_Widget_Helper_Layout
     {
         foreach ($options as $value => $label) {
             $this->_options[$value] = new Typecho_Widget_Helper_Layout('input');
@@ -107,7 +107,7 @@ class MDRadio extends Typecho_Widget_Helper_Form_Element
      * @param mixed $value 表单元素值
      * @return void
      */
-    protected function _value($value)
+    protected function inputValue($value)
     {
         foreach ($this->_options as $option) {
             $option->removeAttribute('checked');

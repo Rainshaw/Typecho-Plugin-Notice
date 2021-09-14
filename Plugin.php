@@ -8,14 +8,14 @@ require 'libs/db.php';
 require 'libs/Version.php';
 require 'libs/Utils.php';
 
-define('__TYPECHO_PLUGIN_NOTICE_VERSION__', '0.7.3');
+define('__TYPECHO_PLUGIN_NOTICE_VERSION__', '0.8.0');
 
 /**
  * <strong style="color:#28B7FF;font-family: 楷体;">评论通知</strong>
  *
  * @package Notice
  * @author <strong style="color:#28B7FF;font-family: 楷体;">Rainshaw</strong>
- * @version 0.7.3
+ * @version 0.8.0
  * @link https://github.com/RainshawGao
  * @since 1.2.0
  */
@@ -60,8 +60,8 @@ class Notice_Plugin implements Typecho_Plugin_Interface
         Helper::addAction(self::$action_test, 'Notice_libs_TestAction');
         Helper::addAction(self::$action_edit_template, 'Notice_libs_TestAction');
         $index = Helper::addMenu(__CLASS__);
-        Helper::addPanel($index, self::$panel_edit_template, '编辑邮件模版', NULL, 'administrator');
-        Helper::addPanel($index, self::$panel_test, '配置测试', NULL, 'administrator');
+        Helper::addPanel($index, self::$panel_edit_template, '编辑邮件模版', '', 'administrator');
+        Helper::addPanel($index, self::$panel_test, '配置测试', '', 'administrator');
 
         return '<div id="AS-SW" style="border-radius:2px;box-shadow:1px 1px 50px rgba(0,0,0,.3);background-color: #fff;width: auto; height: auto; z-index: 2501554; position: fixed; margin-left: -125px; margin-top: -75px; left: 50%; top: 50%;">
                     <div style="text-align: center;height:42px;line-height:42px;border-bottom:1px solid #eee;font-size:14px;overflow:hidden;border-radius:2px 2px 0 0;font-weight:bold;position:relative;cursor:move;min-width:200px;box-sizing:border-box;background-color:#28B7FF;color:#fff;">

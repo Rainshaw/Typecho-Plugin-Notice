@@ -69,7 +69,7 @@ class MDTextarea extends Typecho_Widget_Helper_Form_Element
      * @param array $options 选择项
      * @return Typecho_Widget_Helper_Layout
      */
-    public function input($name = NULL, array $options = NULL)
+    public function input($name = NULL, array $options = NULL):?Typecho_Widget_Helper_Layout
     {
         $this->addItem(new MDCustomLabel('<div class="mdui-textfield">'));
         $input = new Typecho_Widget_Helper_Layout('textarea', array('id' => $name . '-0-' . self::$uniqueId, 'name' => $name, 'class' => 'mdui-textfield-input'));
@@ -87,7 +87,7 @@ class MDTextarea extends Typecho_Widget_Helper_Form_Element
      * @param string $value 表单项默认值
      * @return void
      */
-    protected function _value($value)
+    protected function inputValue($value)
     {
         $this->input->html(htmlspecialchars($value));
     }

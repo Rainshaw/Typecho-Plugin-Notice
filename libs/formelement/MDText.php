@@ -67,7 +67,7 @@ class MDText extends Typecho_Widget_Helper_Form_Element
      * @param array $options 选择项
      * @return Typecho_Widget_Helper_Layout
      */
-    public function input($name = NULL, array $options = NULL)
+    public function input($name = NULL, array $options = NULL):?Typecho_Widget_Helper_Layout
     {
         $this->addItem(new MDCustomLabel('<div class="mdui-textfield">'));
         $input = new Typecho_Widget_Helper_Layout('input', array('id' => $name . '-0-' . self::$uniqueId,
@@ -86,7 +86,7 @@ class MDText extends Typecho_Widget_Helper_Form_Element
      * @param mixed $value 表单项默认值
      * @return void
      */
-    protected function _value($value)
+    protected function inputValue($value)
     {
         $this->input->setAttribute('value', htmlspecialchars($value));
     }

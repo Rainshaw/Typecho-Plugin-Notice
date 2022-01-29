@@ -76,7 +76,7 @@ class MDCheckbox extends Typecho_Widget_Helper_Form_Element
      * @param array $options 选择项
      * @return Typecho_Widget_Helper_Layout
      */
-    public function input($name = NULL, array $options = NULL):?Typecho_Widget_Helper_Layout
+    public function input(?string $name = NULL, ?array $options = NULL):?Typecho_Widget_Helper_Layout
     {
         foreach ($options as $value => $label) {
 

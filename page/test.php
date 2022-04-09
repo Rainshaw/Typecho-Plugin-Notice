@@ -14,17 +14,17 @@ $title = $current == 'mail' ? 'Notice 插件邮件配置测试' :
             <div class="row typecho-page-main" role="main">
                 <div class="col-mb-12">
                     <ul class="typecho-option-tabs fix-tabs clearfix">
-                        <li<?=($current == 'mail' ? ' class="current"' : '')?>><a href="<?php $options->adminUrl('extending.php?panel=' . Notice_Plugin::$panel_test . '&type=mail'); ?>">
+                        <li<?=($current == 'mail' ? ' class="current"' : '')?>><a href="<?php $options->adminUrl('extending.php?panel=' . TypechoPlugin\Notice\Plugin::$panel_test . '&type=mail'); ?>">
                                 <?php _e('邮件发送测试'); ?></a></li>
-                        <li<?=($current == 'theme' ? ' class="current"' : '')?>><a href="<?php $options->adminUrl('extending.php?panel=' . Notice_Plugin::$panel_test . '&type=qmsg'); ?>">
+                        <li<?=($current == 'theme' ? ' class="current"' : '')?>><a href="<?php $options->adminUrl('extending.php?panel=' . TypechoPlugin\Notice\Plugin::$panel_test . '&type=qmsg'); ?>">
                                 <?php _e('Qmsg酱发送测试'); ?></a></li>
-                        <li<?=($current == 'theme' ? ' class="current"' : '')?>><a href="<?php $options->adminUrl('extending.php?panel=' . Notice_Plugin::$panel_test . '&type=serverchan'); ?>">
+                        <li<?=($current == 'theme' ? ' class="current"' : '')?>><a href="<?php $options->adminUrl('extending.php?panel=' . TypechoPlugin\Notice\Plugin::$panel_test . '&type=serverchan'); ?>">
                                 <?php _e('Server酱发送测试'); ?></a></li>
                     </ul>
                 </div>
                 <div class="typecho-edit-theme">
                     <div class="col-mb-12 col-tb-8 col-9 content">
-                        <?php Typecho_Widget::widget('Notice_libs_TestAction')->testForm($current)->render(); ?>
+                        <?php Typecho\Widget::widget('Notice_libs_TestAction')->testForm($current)->render(); ?>
                     </div>
                 </div>
             </div>

@@ -1,6 +1,16 @@
 <?php
+namespace TypechoPlugin\Notice\libs;
 
-class Notice_Utils
+if (!defined('__TYPECHO_ROOT_DIR__')) {
+    exit;
+}
+
+use Typecho;
+use Utils;
+use Widget;
+
+
+class ShortCut
 {
 
     /**
@@ -9,14 +19,14 @@ class Notice_Utils
      * @access public
      * @param string $template owner为博主，guest为访客
      * @return string
-     * @throws Typecho_Widget_Exception
+     * @throws Typecho\Widget\Exception
      */
-    public static function getTemplate($template = 'owner')
+    public static function getTemplate(string $template = 'owner'): string
     {
         $template .= '.html';
-        $filename = Helper::options()->pluginDir() . '/Notice/template/' . $template;
+        $filename = Utils\Helper::options()->pluginDir() . '/Notice/template/' . $template;
         if (!file_exists($filename)) {
-            throw new Typecho_Widget_Exception('模板文件' . $template . '不存在', 404);
+            throw new Typecho\Widget\Exception('模板文件' . $template . '不存在', 404);
         }
 
         return file_get_contents($filename);
@@ -32,14 +42,15 @@ class Notice_Utils
      * @return string
      */
 
-    public static function replace($str, $coid)
+    public static function replace(string $str, int $coid): string
     {
-        $comment = Helper::widgetById('comments', $coid);
-        $date = new Typecho_Date();
+        $comment = Utils\Helper::widgetById('comments', $coid);
+        assert($comment instanceof Widget\Base\Comments);
+        $date = new Typecho\Date();
         $time = $date->format('Y-m-d H:i:s');
         $parent = $comment;
         if ($comment->parent) {
-            $parent = Helper::widgetById('comments', $comment->parent);
+            $parent = Utils\Helper::widgetById('comments', $comment->parent);
         }
         $status = array(
             "approved" => "通过",
@@ -47,20 +58,20 @@ class Notice_Utils
             "spam" => "垃圾"
         );
         $replace = array(
-            Helper::options()->title,
+            Utils\Helper::options()->title,
             $comment->title,
             $comment->author,
             $parent->author,
             $comment->ip,
             $comment->mail,
             $comment->permalink,
-            Helper::options()->siteUrl . __TYPECHO_ADMIN_DIR__ . "manage-comments.php",
+            Utils\Helper::options()->siteUrl . __TYPECHO_ADMIN_DIR__ . "manage-comments.php",
             $comment->text,
             $parent->text,
             $time,
             $status[$comment->status]
         );
-        return Notice_Utils::replaceArray($str, $replace);
+        return self::replaceArray($str, $replace);
     }
 
     public static function replaceArray($str, $replace)

@@ -1,7 +1,15 @@
 <?php
+namespace TypechoPlugin\Notice\libs;
 
-class Version{
+if (!defined('__TYPECHO_ROOT_DIR__')) {
+    exit;
+}
 
+use Typecho;
+use Utils;
+
+class Version
+{
 
 
     /**
@@ -10,10 +18,11 @@ class Version{
      * @access public
      * @return string
      */
-    public static function getNewRelease(){
-        $date = new Typecho_Date();
+    public static function getNewRelease(): string
+    {
+        $date = new Typecho\Date();
         $date = $date->timeStamp;
-        $filename = Helper::options()->pluginDir() . '/Notice/cache/version.json';
+        $filename = Utils\Helper::options()->pluginDir() . '/Notice/cache/version.json';
         $data = file_get_contents($filename);
         if ($data) {
             $data = json_decode($data, true);
@@ -37,7 +46,7 @@ class Version{
      * @access public
      * @return string
      */
-    public static function getNewReleaseFromGithub()
+    public static function getNewReleaseFromGithub(): string
     {
         $ch = curl_init("https://api.github.com/repos/RainshawGao/Typecho-Plugin-Notice/releases/latest");
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);

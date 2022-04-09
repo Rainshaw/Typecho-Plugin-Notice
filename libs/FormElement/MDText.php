@@ -1,24 +1,20 @@
 <?php
+
+namespace TypechoPlugin\Notice\libs\FormElement;
+
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
-/**
- * 下拉选择框帮手
- *
- * @category typecho
- * @package Widget
- * @copyright Copyright (c) 2008 Typecho team (http://www.typecho.org)
- * @license GNU General Public License 2.0
- * @version $Id$
- */
+
+use Typecho;
 
 /**
- * 下拉选择框帮手类
+ * 文字输入表单项帮手类
  *
  * @category typecho
  * @package Widget
  * @copyright Copyright (c) 2008 Typecho team (http://www.typecho.org)
  * @license GNU General Public License 2.0
  */
-class MDSelect extends Typecho_Widget_Helper_Form_Element
+class MDText extends Typecho\Widget\Helper\Form\Element
 {
 
     public function start()
@@ -35,7 +31,6 @@ class MDSelect extends Typecho_Widget_Helper_Form_Element
     {
         if ($isOpen) {
             $this->addItem(new MDCustomLabel('<div class="mdui-panel" mdui-panel=""><div class="mdui-panel-item mdui-panel-item-open"><div class="mdui-panel-item-header">' . $label . '</div><div class="mdui-panel-item-body"><ul style="padding-left: 0px; list-style: none!important" id="typecho-option-item-' . $name . '-' . self::$uniqueId . '">'));
-
         } else {
             $this->addItem(new MDCustomLabel('<div class="mdui-panel" mdui-panel=""><div class="mdui-panel-item"><div class="mdui-panel-item-header">' . $label . '</div><div class="mdui-panel-item-body"><ul style="padding-left: 0px; list-style: none!important" id="typecho-option-item-' . $name . '-' . self::$uniqueId . '">'));
         }
@@ -59,53 +54,36 @@ class MDSelect extends Typecho_Widget_Helper_Form_Element
         }
     }
 
-    /**
-     * 选择值
-     *
-     * @access private
-     * @var array
-     */
-    private $_options = array();
 
     /**
      * 初始化当前输入项
      *
      * @access public
-     * @param string $name 表单元素名称
-     * @param array $options 选择项
-     * @return Typecho_Widget_Helper_Layout
+     * @param string|null $name 表单元素名称
+     * @param array|null $options 选择项
+     * @return Typecho\Widget\Helper\Layout
      */
-    public function input($name = NULL, array $options = NULL):?Typecho_Widget_Helper_Layout
+    public function input(?string $name = null, ?array $options = null): ?Typecho\Widget\Helper\Layout
     {
-        $input = new Typecho_Widget_Helper_Layout('select');
-        $this->container($input->setAttribute('name', $name)
-            ->setAttribute('id', $name . '-0-' . self::$uniqueId)
-            ->setAttribute('class', 'mdui-select'));
+        $this->addItem(new MDCustomLabel('<div class="mdui-textfield">'));
+        $input = new Typecho\Widget\Helper\Layout('input', array('id' => $name . '-0-' . self::$uniqueId,
+            'name' => $name, 'type' => 'text', 'class' => 'mdui-textfield-input'));
+        $this->container($input);
+        $this->addItem(new MDCustomLabel("</div>"));
         $this->inputs[] = $input;
-
-        foreach ($options as $value => $label) {
-            $this->_options[$value] = new Typecho_Widget_Helper_Layout('option');
-            $input->addItem($this->_options[$value]->setAttribute('value', $value)->html($label));
-        }
 
         return $input;
     }
 
     /**
-     * 设置表单元素值
+     * 设置表单项默认值
      *
      * @access protected
-     * @param mixed $value 表单元素值
+     * @param mixed $value 表单项默认值
      * @return void
      */
     protected function inputValue($value)
     {
-        foreach ($this->_options as $option) {
-            $option->removeAttribute('selected');
-        }
-
-        if (isset($this->_options[$value])) {
-            $this->_options[$value]->setAttribute('selected', 'true');
-        }
+        $this->input->setAttribute('value', htmlspecialchars($value));
     }
 }

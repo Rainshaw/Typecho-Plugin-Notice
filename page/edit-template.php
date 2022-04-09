@@ -1,7 +1,7 @@
 <?php
 include "header.php";
 include "menu.php";
-Typecho_Widget::widget('Notice_libs_TestAction')->to($files);
+Typecho\Widget::widget('Notice_libs_TestAction')->to($files);
 ?>
 
     <div class="main">
@@ -13,7 +13,7 @@ Typecho_Widget::widget('Notice_libs_TestAction')->to($files);
                 <div class="typecho-edit-theme">
                     <div class="col-mb-12 col-tb-8 col-9 content">
                         <form method="post" name="theme" id="theme"
-                              action="<?php $options->index('/action/' . Notice_Plugin::$action_edit_template); ?>">
+                              action="<?php $options->index('/action/' . TypechoPlugin\Notice\Plugin::$action_edit_template); ?>">
                             <label for="content" class="sr-only"><?php _e('编辑源码'); ?></label>
                             <textarea name="content" id="content" class="w-100 mono"
                                       <?php if (!$files->currentIsWriteable()): ?>readonly<?php endif; ?>><?php echo $files->currentContent(); ?></textarea>
@@ -32,7 +32,7 @@ Typecho_Widget::widget('Notice_libs_TestAction')->to($files);
                         <li><strong>模板文件</strong></li>
                         <?php while ($files->next()): ?>
                             <li<?php if ($files->current): ?> class="current"<?php endif; ?>>
-                                <a href="<?php $options->adminUrl('extending.php?panel=' . Notice_Plugin::$panel_edit_template . '&file=' . $files->file); ?>"><?php $files->file(); ?></a>
+                                <a href="<?php $options->adminUrl('extending.php?panel=' . TypechoPlugin\Notice\Plugin::$panel_edit_template . '&file=' . $files->file); ?>"><?php $files->file(); ?></a>
                             </li>
                         <?php endwhile; ?>
                     </ul>

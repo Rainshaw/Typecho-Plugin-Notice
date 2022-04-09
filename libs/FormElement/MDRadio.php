@@ -1,26 +1,22 @@
 <?php
+
+namespace TypechoPlugin\Notice\libs\FormElement;
+
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
-/**
- * 多选框帮手
- *
- * @category typecho
- * @package Widget
- * @copyright Copyright (c) 2008 Typecho team (http://www.typecho.org)
- * @license GNU General Public License 2.0
- * @version $Id$
- */
+use Typecho;
 
 /**
- * 多选框帮手类
+ * 单选框帮手类
  *
  * @category typecho
  * @package Widget
  * @copyright Copyright (c) 2008 Typecho team (http://www.typecho.org)
  * @license GNU General Public License 2.0
  */
-class MDCheckbox extends Typecho_Widget_Helper_Form_Element
+class MDRadio extends Typecho\Widget\Helper\Form\Element
 {
+
 
     public function start()
     {
@@ -34,13 +30,14 @@ class MDCheckbox extends Typecho_Widget_Helper_Form_Element
 
     public function __construct($name = NULL, array $options = NULL, $value = NULL, $label = NULL, $description = NULL, $isOpen = true)
     {
+        /** 创建html元素,并设置class */
         if ($isOpen) {
             $this->addItem(new MDCustomLabel('<div class="mdui-panel" mdui-panel=""><div class="mdui-panel-item mdui-panel-item-open"><div class="mdui-panel-item-header">' . $label . '</div><div class="mdui-panel-item-body"><ul class="typecho-option" id="typecho-option-item-' . $name . '-' . self::$uniqueId . '">'));
-
         } else {
             $this->addItem(new MDCustomLabel('<div class="mdui-panel" mdui-panel=""><div class="mdui-panel-item"><div class="mdui-panel-item-header">' . $label . '</div><div class="mdui-panel-item-body"><ul class="typecho-option" id="typecho-option-item-' . $name . '-' . self::$uniqueId . '">'));
         }
         $this->name = $name;
+        self::$uniqueId++;
         self::$uniqueId++;
 
         /** 运行自定义初始函数 */
@@ -60,6 +57,7 @@ class MDCheckbox extends Typecho_Widget_Helper_Form_Element
         }
     }
 
+
     /**
      * 选择值
      *
@@ -72,28 +70,25 @@ class MDCheckbox extends Typecho_Widget_Helper_Form_Element
      * 初始化当前输入项
      *
      * @access public
-     * @param string $name 表单元素名称
-     * @param array $options 选择项
-     * @return Typecho_Widget_Helper_Layout
+     * @param string|null $name 表单元素名称
+     * @param array|null $options 选择项
+     * @return Typecho\Widget\Helper\Layout
      */
-    public function input(?string $name = NULL, ?array $options = NULL):?Typecho_Widget_Helper_Layout
+    public function input(?string $name = null, ?array $options = null): ?Typecho\Widget\Helper\Layout
     {
         foreach ($options as $value => $label) {
-
-            $this->_options[$value] = new Typecho_Widget_Helper_Layout('input');
-            $id = $this->name . '-' . $this->filterValue($value);
-
+            $this->_options[$value] = new Typecho\Widget\Helper\Layout('input');
             $item = $this->multiline();
-
+            $id = $this->name . '-' . $this->filterValue($value);
             $this->inputs[] = $this->_options[$value];
 
-            $item->addItem(new MDCustomLabel('<label class="mdui-checkbox">'));
-            $item->addItem($this->_options[$value]->setAttribute('name', $this->name . '[]')
-                ->setAttribute('type', 'Checkbox')
+            $item->addItem(new MDCustomLabel('<label class="mdui-radio">'));
+            $item->addItem($this->_options[$value]->setAttribute('name', $this->name)
+                ->setAttribute('type', 'radio')
                 ->setAttribute('value', $value)
                 ->setAttribute('id', $id));
-            $item->addItem(new MDCustomLabel("<i class=\"mdui-checkbox-icon\"></i>
-$label</label>"));
+
+            $item->addItem(new MDCustomLabel('<i class="mdui-radio-icon"></i>' . $label . '</label>'));
 
             $this->container($item);
         }
@@ -110,16 +105,14 @@ $label</label>"));
      */
     protected function inputValue($value)
     {
-        $values = is_array($value) ? $value : array($value);
-
         foreach ($this->_options as $option) {
             $option->removeAttribute('checked');
         }
 
-        foreach ($values as $value) {
-            if (isset($this->_options[$value])) {
-                $this->_options[$value]->setAttribute('checked', 'true');
-            }
+        if (isset($this->_options[$value])) {
+            $this->value = $value;
+            $this->_options[$value]->setAttribute('checked', 'true');
+            $this->input = $this->_options[$value];
         }
     }
 }

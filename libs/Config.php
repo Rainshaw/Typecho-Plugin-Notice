@@ -1,17 +1,27 @@
 <?php
-/*表单组件*/
-require_once("formelement/MDFormElements.php");
-require_once('formelement/MDCheckbox.php');
-require_once('formelement/MDText.php');
-require_once('formelement/MDRadio.php');
-require_once('formelement/MDSelect.php');
-require_once('formelement/MDTextarea.php');
 
-class Notice_Config
+namespace TypechoPlugin\Notice\libs;
+
+if (!defined('__TYPECHO_ROOT_DIR__')) {
+    exit;
+}
+
+use Typecho;
+use TypechoPlugin\Notice\libs\FormElement\MDCheckbox;
+use TypechoPlugin\Notice\libs\FormElement\MDRadio;
+use TypechoPlugin\Notice\libs\FormElement\MDSelect;
+use TypechoPlugin\Notice\libs\FormElement\MDText;
+use TypechoPlugin\Notice\libs\FormElement\MDTextarea;
+use TypechoPlugin\Notice\libs\FormElement\MDTitle;
+use Utils;
+use TypechoPlugin\Notice;
+use const TypechoPlugin\Notice\__TYPECHO_PLUGIN_NOTICE_VERSION__;
+
+class Config
 {
-    public static function style(Typecho_Widget_Helper_Form $form)
+    public static function style(Typecho\Widget\Helper\Form $form)
     {
-        $option = Helper::options();
+        $option = Utils\Helper::options();
         echo '<link href="https://cdn.jsdelivr.net/npm/mdui@0.4.3/dist/css/mdui.min.css" rel="stylesheet">';
         echo '<script src="https://cdn.jsdelivr.net/npm/mdui@0.4.3/dist/js/mdui.min.js"></script>';
         echo '<script src="https://cdn.jsdelivr.net/npm/jquery@2.2.4/dist/jquery.min.js" type="text/javascript"></script>';
@@ -19,9 +29,9 @@ class Notice_Config
         echo '<script src="' . $option->pluginUrl . '/Notice/assets/notice.js"></script>';
     }
 
-    public static function header(Typecho_Widget_Helper_Form $form)
+    public static function header(Typecho\Widget\Helper\Form $form)
     {
-        $db = Typecho_Db::get();
+        $db = Typecho\Db::get();
         if ($db->fetchRow($db->select()->from('table.options')->where('name = ?', 'plugin:Notice-Backup'))) {
             $backupExist = '<div class="mdui-chip"><span class="mdui-chip-icon mdui-color-green"><i class="mdui-icon material-icons">backup</i></span><span
         class="mdui-chip-title mdui-text-color-light-blue">数据库中存在插件配置备份</span></div>';
@@ -29,15 +39,15 @@ class Notice_Config
             $backupExist = '<div class="mdui-chip"><span class="mdui-chip-icon mdui-color-red"><i class="mdui-icon material-icons">backup</i></span><span 
         class="mdui-chip-title mdui-text-color-red">数据库没有插件配置备份</span></div>';
         }
-        $tag = Version::getNewRelease();
+        $tag = Notice\libs\Version::getNewRelease();
         $tag_compare = version_compare(__TYPECHO_PLUGIN_NOTICE_VERSION__, $tag);
-        if ($tag_compare<0){
+        if ($tag_compare < 0) {
             $update = '<div class="mdui-chip"><span class="mdui-chip-icon mdui-color-red"><i class="mdui-icon material-icons">system_update_alt</i></span>
-                <span class="mdui-chip-title mdui-text-color-red">新版本'.$tag.'已可用</span></div>';
-        }elseif ($tag_compare==0){
+                <span class="mdui-chip-title mdui-text-color-red">新版本' . $tag . '已可用</span></div>';
+        } elseif ($tag_compare == 0) {
             $update = '<div class="mdui-chip"><span class="mdui-chip-icon mdui-color-green"><i class="mdui-icon material-icons">cloud_done</i></span>
                 <span class="mdui-chip-title mdui-text-color-light-blue">当前是最新版本</span></div>';
-        }else{
+        } else {
             $update = '<div class="mdui-chip"><span class="mdui-chip-icon mdui-color-amber"><i class="mdui-icon material-icons">warning</i></span>
                 <span class="mdui-chip-title mdui-text-color-cyan">您当前正在使用测试版</span></div>';
         }
@@ -74,11 +84,12 @@ EOF;
 
     }
 
-    public static function script(Typecho_Widget_Helper_Form $form){
+    public static function script(Typecho\Widget\Helper\Form $form)
+    {
 
-        $blog_url = Helper::options()->siteUrl;
-        $action_url = $blog_url . 'action/' . Notice_Plugin::$action_setting;
-        echo<<<EOF
+        $blog_url = Utils\Helper::options()->siteUrl;
+        $action_url = $blog_url . 'action/' . Notice\Plugin::$action_setting;
+        echo <<<EOF
 <script>
     $(function(){
          $('.showSettings').bind('click',function() {
@@ -175,7 +186,7 @@ EOF;
 
     }
 
-    public static function Setting(Typecho_Widget_Helper_Form $form)
+    public static function Setting(Typecho\Widget\Helper\Form $form)
     {
         $form->addItem(new MDTitle('推送服务配置', '推送服务开关、插件更新提示、数据库配置', false));
 
@@ -197,11 +208,11 @@ EOF;
             ), '0', _t('卸载插件时删除数据库'),
             _t('取消勾选则表示当您禁用此插件时，插件的历史记录仍将存留在数据库中。'));
         $form->addInput($delDB);
-        $form->addItem(new Typecho_Widget_Helper_Layout('/div'));
-        $form->addItem(new Typecho_Widget_Helper_Layout('/div'));
+        $form->addItem(new Typecho\Widget\Helper\Layout('/div'));
+        $form->addItem(new Typecho\Widget\Helper\Layout('/div'));
     }
 
-    public static function Serverchan(Typecho_Widget_Helper_Form $form)
+    public static function Serverchan(Typecho\Widget\Helper\Form $form)
     {
         $form->addItem(new MDTitle('Server酱Turbo配置', 'SCKEY、Server酱Turbo通知模版<span style="color:red"><a href="https://sc.ftqq.com/9.version">Server酱升级！</a>请重新配置本项</span>', false));
         $scKey = new MDText('scKey', NULL, NULL, _t('Server酱SCKEY'),
@@ -214,8 +225,8 @@ EOF;
             _t("Server酱Turbo通知模版"), _t("通过server酱Turbo通知您的内容模版，可使用变量列表见插件说明")
         );
         $form->addInput($scMsg);
-        $form->addItem(new Typecho_Widget_Helper_Layout('/div'));
-        $form->addItem(new Typecho_Widget_Helper_Layout('/div'));
+        $form->addItem(new Typecho\Widget\Helper\Layout('/div'));
+        $form->addItem(new Typecho\Widget\Helper\Layout('/div'));
     }
 
     public static function checkServerchan(array $settings)
@@ -231,7 +242,7 @@ EOF;
         return '';
     }
 
-    public static function Qmsgchan(Typecho_Widget_Helper_Form $form)
+    public static function Qmsgchan(Typecho\Widget\Helper\Form $form)
     {
         $form->addItem(new MDTitle('Qmsg酱配置', 'QmsgKEY、QmsgQQ、Qmsg酱通知模版', false));
         $QmsgKey = new MDText('QmsgKey', NULL, NULL, _t('QmsgKey'),
@@ -249,8 +260,8 @@ EOF;
             _t("Qmsg酱通知模版"), _t("通过Qmsg酱通知您的内容模版，可使用变量列表见插件说明")
         );
         $form->addInput($QmsgMsg);
-        $form->addItem(new Typecho_Widget_Helper_Layout('/div'));
-        $form->addItem(new Typecho_Widget_Helper_Layout('/div'));
+        $form->addItem(new Typecho\Widget\Helper\Layout('/div'));
+        $form->addItem(new Typecho\Widget\Helper\Layout('/div'));
     }
 
     public static function checkQmsgchan(array $settings)
@@ -266,7 +277,7 @@ EOF;
         return '';
     }
 
-    public static function SMTP(Typecho_Widget_Helper_Form $form)
+    public static function SMTP(Typecho\Widget\Helper\Form $form)
     {
         $form->addItem(new MDTitle('SMTP 配置', NULL, false));
         $host = new MDText('host', NULL, '',
@@ -300,7 +311,7 @@ EOF;
         $form->addInput($from->addRule('email', _t('请输入正确的邮箱地址')));
 
         $from_name = new MDText('from_name', NULL,
-            Helper::options()->title, _t('发信人名称'), _t('默认为站点标题'));
+            Utils\Helper::options()->title, _t('发信人名称'), _t('默认为站点标题'));
         $form->addInput($from_name);
 
 
@@ -316,8 +327,8 @@ EOF;
             "您在 [{title}] 的评论已被审核通过", _t('访客接收邮件标题'));
         $form->addInput($titleForApproved->addRule('required', _t('访客接收邮件标题 不能为空')));
 
-        $form->addItem(new Typecho_Widget_Helper_Layout('/div'));
-        $form->addItem(new Typecho_Widget_Helper_Layout('/div'));
+        $form->addItem(new Typecho\Widget\Helper\Layout('/div'));
+        $form->addItem(new Typecho\Widget\Helper\Layout('/div'));
     }
 
     public static function checkSMTP(array $settings)

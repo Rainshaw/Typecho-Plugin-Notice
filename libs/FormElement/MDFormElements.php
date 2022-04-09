@@ -1,5 +1,9 @@
 <?php
+namespace TypechoPlugin\Notice\libs\FormElement;
+
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
+
+use Typecho;
 
 /**
  * FormElements.php
@@ -8,13 +12,14 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
  * Version    :
  * Description: 后台外观设置中的表单中的一些基本元素
  */
-class MDCustomLabel extends Typecho_Widget_Helper_Layout
+class MDCustomLabel extends Typecho\Widget\Helper\Layout
 {
     public function __construct($html)
     {
         $this->html($html);
         $this->start();
         $this->end();
+
     }
 
     public function start()
@@ -26,7 +31,7 @@ class MDCustomLabel extends Typecho_Widget_Helper_Layout
     }
 }
 
-class MDEndSymbol extends Typecho_Widget_Helper_Layout
+class MDEndSymbol extends Typecho\Widget\Helper\Layout
 {
     public function __construct($num)
     {
@@ -44,7 +49,7 @@ class MDEndSymbol extends Typecho_Widget_Helper_Layout
     }
 }
 
-class MDTitle extends Typecho_Widget_Helper_Layout
+class MDTitle extends Typecho\Widget\Helper\Layout
 {
     /**
      * 构造函数,设置标签名称

@@ -137,7 +137,7 @@ class TestAction extends Typecho\Widget implements Widget\ActionInterface
         $text_p = new Typecho\Widget\Helper\Form\Element\Textarea('text_p', NULL, NULL, _t('被评论内容'));
         $form->addInput($text_p);
 
-        $permalink = new Typecho\Widget\Helper\Form\Element\Text('permalink', NULL, Helper::options()->index, _t('permalink'), _t('评论链接'));
+        $permalink = new Typecho\Widget\Helper\Form\Element\Text('permalink', NULL, Utils\Helper::options()->index, _t('permalink'), _t('评论链接'));
         $form->addInput($permalink);
 
         $status = new Typecho\Widget\Helper\Form\Element\Select('status', array(

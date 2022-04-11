@@ -10,7 +10,7 @@ use Widget;
 
 class SettingAction extends Typecho\Widget implements Widget\ActionInterface
 {
-    private TYpecho\Db $_db;
+    private Typecho\Db $_db;
     private string $_pluginName='plugin:Notice';
     private string $_pluginBackupName='plugin:Notice-Backup';
 

@@ -5,8 +5,15 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
 }
 
+require_once "libs/Config.php";
+require_once "libs/db.php";
+require_once "libs/Utils.php";
+require_once "libs/FormElement/MDFormElements.php";
+
 use Typecho;
+use Typecho\Plugin\PluginInterface;
 use Utils;
+use Widget;
 use PHPMailer;
 
 const __TYPECHO_PLUGIN_NOTICE_VERSION__ = '1.0.0';
@@ -20,16 +27,16 @@ const __TYPECHO_PLUGIN_NOTICE_VERSION__ = '1.0.0';
  * @link https://github.com/RainshawGao
  * @since 1.2.0
  */
-class Plugin implements Typecho\Plugin\PluginInterface
+class Plugin implements PluginInterface
 {
     /** @var string 插件配置action前缀 */
-    public static string $action_setting='Plugin-Notice-Setting';
+    public static string $action_setting = 'Plugin-Notice-Setting';
 
     /** @var string 插件测试action前缀 */
-    public static string $action_test='Plugin-Notice-Test';
+    public static string $action_test = 'Plugin-Notice-Test';
 
     /** @var string 编辑插件模版action前缀 */
-    public static string $action_edit_template='Plugin-Notice-Edit-Template';
+    public static string $action_edit_template = 'Plugin-Notice-Edit-Template';
 
     /** @var string 插件编辑模板面板 */
     public static string $panel_edit_template = 'Notice/page/edit-template.php';
@@ -47,29 +54,12 @@ class Plugin implements Typecho\Plugin\PluginInterface
      */
     public static function activate(): string
     {
-        $s = libs\DB::dbInstall();
-        // 通知触发函数
-        Typecho\Plugin::factory('Widget_Feedback')->finishComment = __CLASS__ . 'requestService';
-        Typecho\Plugin::factory('Widget_Comments_Edit')->finishComment = __CLASS__ . 'requestService';
-        Typecho\Plugin::factory('Widget_Comments_Edit')->mark = __CLASS__ . 'approvedMail';
-        // 注册异步调用函数
-        Typecho\Plugin::factory('Widget_Service')->sendSC = __CLASS__ . 'sendSC';
-        Typecho\Plugin::factory('Widget_Service')->sendQmsg = __CLASS__ . 'sendQmsg';
-        Typecho\Plugin::factory('Widget_Service')->sendMail = __CLASS__ . 'sendMail';
-        Typecho\Plugin::factory('Widget_Service')->sendApprovedMail = __CLASS__ . 'sendApprovedMail';
+        $res = '<div id="typecho-plugin-notice-active-box" style="border-radius:2px;box-shadow:1px 1px 50px rgba(0,0,0,.3);background-color: #fff;width: auto; height: auto; z-index: 2501554; position: fixed; margin-left: -125px; margin-top: -75px; left: 50%; top: 50%;">
+                    <div style="text-align:center;height:42px;line-height:42px;border-bottom:1px solid #eee;font-size:14px;overflow:hidden;border-radius:2px 2px 0 0;font-weight:bold;position:relative;cursor:move;min-width:200px;box-sizing:border-box;background-color:#28B7FF;color:#fff;">';
+        $res .= libs\DB::dbInstall();
 
-        Utils\Helper::addAction(self::$action_setting, 'Notice_libs_SettingAction');
-        Utils\Helper::addAction(self::$action_test, 'Notice_libs_TestAction');
-        Utils\Helper::addAction(self::$action_edit_template, 'Notice_libs_TestAction');
-        $index = Utils\Helper::addMenu(__CLASS__);
-        Utils\Helper::addPanel($index, self::$panel_edit_template, '编辑邮件模版', '', 'administrator');
-        Utils\Helper::addPanel($index, self::$panel_test, '配置测试', '', 'administrator');
-
-        return '<div id="AS-SW" style="border-radius:2px;box-shadow:1px 1px 50px rgba(0,0,0,.3);background-color: #fff;width: auto; height: auto; z-index: 2501554; position: fixed; margin-left: -125px; margin-top: -75px; left: 50%; top: 50%;">
-                    <div style="text-align: center;height:42px;line-height:42px;border-bottom:1px solid #eee;font-size:14px;overflow:hidden;border-radius:2px 2px 0 0;font-weight:bold;position:relative;cursor:move;min-width:200px;box-sizing:border-box;background-color:#28B7FF;color:#fff;">
-                        ' . $s . '
-                    </div>
-                    <div style="padding:15px;font-size:14px;min-width:150px;position:relative;box-sizing:border-box;height: 50px;">
+        $res .= '   </div>
+                    <div style="padding:15px;font-size:14px;min-width:150px;position:relative;box-sizing:border-box;height:50px;">
                         欢迎使用Notice插件，希望能让您喜欢！
                     </div>
                     <div style="text-align:right;padding-bottom:15px;padding-right:10px;min-width:200px;box-sizing:border-box;">
@@ -77,8 +67,28 @@ class Plugin implements Typecho\Plugin\PluginInterface
                             关闭
                         </button>
                     </div>
-                    <Script>function colseDIV(){$("#AS-SW").hide()}</Script>
+                    <script>function colseDIV(){$("#typecho-plugin-notice-active-box").hide()}</script>
                 </div>';
+
+        // 通知触发函数
+        Typecho\Plugin::factory('Widget\Feedback')->finishComment = __CLASS__ . '::requestService';
+        Typecho\Plugin::factory('Widget\Comments\Edit')->finishComment = __CLASS__ . '::requestService';
+        Typecho\Plugin::factory('Widget\Comments\Edit')->mark = __CLASS__ . '::approvedMail';
+        // 注册异步调用函数
+        Typecho\Plugin::factory('Widget\Service')->sendSC = __CLASS__ . '::sendSC';
+        Typecho\Plugin::factory('Widget\Service')->sendQmsg = __CLASS__ . '::sendQmsg';
+        Typecho\Plugin::factory('Widget\Service')->sendMail = __CLASS__ . '::sendMail';
+        Typecho\Plugin::factory('Widget\Service')->sendApprovedMail = __CLASS__ . '::sendApprovedMail';
+
+        Utils\Helper::addAction(self::$action_setting, 'TypechoPlugin\Notice\libs\SettingAction');
+        Utils\Helper::addAction(self::$action_test, 'TypechoPlugin\Notice\libs\TestAction');
+        Utils\Helper::addAction(self::$action_edit_template, 'TypechoPlugin\Notice\libs\TestAction');
+        $index = Utils\Helper::addMenu("Notice");
+        Utils\Helper::addPanel($index, self::$panel_edit_template, '编辑邮件模版', '', 'administrator');
+        Utils\Helper::addPanel($index, self::$panel_test, '配置测试', '', 'administrator');
+
+
+        return $res;
     }
 
     /**
@@ -96,7 +106,7 @@ class Plugin implements Typecho\Plugin\PluginInterface
         Utils\Helper::removeAction(self::$action_setting);
         Utils\Helper::removeAction(self::$action_test);
         Utils\Helper::removeAction(self::$action_edit_template);
-        $index = Utils\Helper::removeMenu(__CLASS__);
+        $index = Utils\Helper::removeMenu("Notice");
         Utils\Helper::removePanel($index, self::$panel_edit_template);
         Utils\Helper::removePanel($index, self::$panel_test);
 
@@ -336,34 +346,21 @@ class Plugin implements Typecho\Plugin\PluginInterface
         libs\DB::log($coid, 'qq', $result . "\n\n" . $msg);
     }
 
-
     /**
-     * 异步发送通知邮件
-     *
-     * @access public
-     * @param int $coid 评论id
-     * @return void
-     * @throws Typecho\Plugin\Exception
-     * @throws Typecho\Widget\Exception
      * @throws PHPMailer\PHPMailer\Exception
-     * @throws Typecho\Db\Exception
      */
-    public static function sendMail(int $coid)
+    public static function checkMailConfig($pluginOptions, $comment): ?PHPMailer\PHPMailer\PHPMailer
     {
-        $options = Utils\Helper::options();
-        $pluginOptions = $options->plugin('Notice');
-        $comment = Utils\Helper::widgetById('comments', $coid);
-
         if (!in_array('mail', $pluginOptions->setting)) {
-            return;
+            return null;
         }
 
         if (empty($pluginOptions->host)) {
-            return;
+            return null;
         }
 
         if (!$comment->have() || empty($comment->mail)) {
-            return;
+            return null;
         }
 
         $mail = new PHPMailer\PHPMailer\PHPMailer(false);
@@ -379,6 +376,30 @@ class Plugin implements Typecho\Plugin\PluginInterface
         $mail->isHTML(true);
         $mail->CharSet = 'utf-8';
         $mail->setFrom($pluginOptions->from, $pluginOptions->from_name);
+        return $mail;
+    }
+
+    /**
+     * 异步发送通知邮件
+     *
+     * @access public
+     * @param int $coid 评论id
+     * @return void
+     * @throws Typecho\Plugin\Exception
+     * @throws Typecho\Widget\Exception
+     * @throws PHPMailer\PHPMailer\Exception
+     * @throws Typecho\Db\Exception
+     */
+    public static function sendMail(int $coid)
+    {
+        $pluginOptions = Utils\Helper::options()->plugin('Notice');
+        $comment = Utils\Helper::widgetById('comments', $coid);
+        assert($comment instanceof Widget\Base\Comments);
+
+        $mail = self::checkMailConfig($pluginOptions, $comment);
+        if ($mail == null) {
+            return;
+        }
 
 
         if (0 == $comment->parent) {
@@ -401,21 +422,34 @@ class Plugin implements Typecho\Plugin\PluginInterface
         } else {
             // 某评论有新的子评论，向父评论发信
             if ('approved' == $comment->status) {
-                // 如果评论者之前有通过审核的评论，该评论会直接通过审核，则向父评论发信
+                // 如果评论者之前有通过审核的评论，该评论会直接通过审核，则向父评论及文章作者发信
                 $parent = Utils\Helper::widgetById('comments', $comment->parent);
+                assert($parent instanceof Widget\Base\Comments);
                 $mail->addAddress($parent->mail, $parent->author);
-                // 构造邮件
+                if ($parent->authorId != $parent->ownerId) {
+                    // 如果父评论的作者不是文章的作者，同时给文章作者发信
+                    $owner = Utils\Helper::widgetById("users", $comment->ownerId);
+                    assert($owner instanceof Widget\Base\Users);
+                    $mail->addAddress($owner->mail, $owner->name);
+                }
                 $mail->Subject = libs\ShortCut::replace($pluginOptions->titleForGuest, $coid);
-                $mail->Body = libs\ShortCut::replace(libs\ShortCut::getTemplate('guest'), $coid);
-                $mail->AltBody = "作者：" .
-                    $comment->author .
-                    "\r\n链接：" .
-                    $comment->permalink .
-                    "\r\n评论：\r\n" .
-                    $comment->text;
-                $mail->send();
-                libs\DB::log($coid, 'mail', $mail->Body);
+            } elseif ($comment->status == "waiting") {
+                // 评论没有被标记为通过审核，向博主发送评论通知
+                $owner = Utils\Helper::widgetById("users", $comment->ownerId);
+                assert($owner instanceof Widget\Base\Users);
+                $mail->addAddress($owner->mail, $owner->name);
+                $mail->Subject = libs\ShortCut::replace($pluginOptions->titleForOwner, $coid);
             }
+            // 构造邮件
+            $mail->Body = libs\ShortCut::replace(libs\ShortCut::getTemplate('guest'), $coid);
+            $mail->AltBody = "作者：" .
+                $comment->author .
+                "\r\n链接：" .
+                $comment->permalink .
+                "\r\n评论：\r\n" .
+                $comment->text;
+            $mail->send();
+            libs\DB::log($coid, 'mail', $mail->Body);
         }
     }
 
@@ -432,41 +466,39 @@ class Plugin implements Typecho\Plugin\PluginInterface
      */
     public static function sendApprovedMail(int $coid)
     {
-        $options = Utils\Helper::options();
-        $pluginOptions = $options->plugin('Notice');
+        $pluginOptions = Utils\Helper::options()->plugin('Notice');
         $comment = Utils\Helper::widgetById('comments', $coid);
+        assert($comment instanceof Widget\Base\Comments);
 
-        if (!in_array('mail', $pluginOptions->setting)) {
+        $mail = self::checkMailConfig($pluginOptions, $comment);
+        if ($mail == null) {
             return;
         }
-
-        if (empty($pluginOptions->host)) {
-            return;
-        }
-
-        if (!$comment->have() || empty($comment->mail)) {
-            return;
-        }
-
-        $mail = new PHPMailer\PHPMailer\PHPMailer(false);
-
-        $mail->isSMTP();
-        $mail->Host = $pluginOptions->host;
-        $mail->SMTPAuth = !!$pluginOptions->auth;
-        $mail->Username = $pluginOptions->user;
-        $mail->Password = $pluginOptions->password;
-        $mail->SMTPSecure = $pluginOptions->secure;
-        $mail->Port = $pluginOptions->port;
-        $mail->getSMTPInstance()->setTimeout(10);
-        $mail->isHTML(true);
-        $mail->CharSet = 'utf-8';
-        $mail->setFrom($pluginOptions->from, $pluginOptions->from_name);
-
+        // 向评论者发送审核通过邮件
         $mail->addAddress($comment->mail, $comment->author);
         $mail->Subject = libs\ShortCut::replace($pluginOptions->titleForApproved, $coid);
         $mail->Body = libs\ShortCut::replace(libs\ShortCut::getTemplate('approved'), $coid);
         $mail->AltBody = "您的评论已通过审核。\n";
         $mail->send();
         libs\DB::log($coid, 'mail', $mail->Body);
+
+
+        // 向父评论发送通知邮件
+        if ($comment->parent != 0){
+            $mail->clearAddresses();
+            $parent = Utils\Helper::widgetById('comments', $comment->parent);
+            assert($parent instanceof Widget\Base\Comments);
+            $mail->addAddress($parent->mail, $parent->author);
+            $mail->Subject = libs\ShortCut::replace($pluginOptions->titleForGuest, $coid);
+            $mail->Body = libs\ShortCut::replace(libs\ShortCut::getTemplate('guest'), $coid);
+            $mail->AltBody = "作者：" .
+                $comment->author .
+                "\r\n链接：" .
+                $comment->permalink .
+                "\r\n评论：\r\n" .
+                $comment->text;
+            $mail->send();
+            libs\DB::log($coid, 'mail', $mail->Body);
+        }
     }
 }

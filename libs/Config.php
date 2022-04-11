@@ -6,6 +6,13 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
 }
 
+require_once "FormElement/MDFormElements.php";
+require_once "FormElement/MDCheckbox.php";
+require_once "FormElement/MDRadio.php";
+require_once "FormElement/MDSelect.php";
+require_once "FormElement/MDText.php";
+require_once "FormElement/MDTextarea.php";
+
 use Typecho;
 use TypechoPlugin\Notice\libs\FormElement\MDCheckbox;
 use TypechoPlugin\Notice\libs\FormElement\MDRadio;

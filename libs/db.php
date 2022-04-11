@@ -21,16 +21,7 @@ class DB
     public static function dbInstall(): string
     {
         $db = Typecho\Db::get();
-        $prefix = $db->getPrefix();
-        $type = explode('_', $db->getAdapterName());
-        $type = array_pop($type);
-        if ($type != 'Mysql' and $type != 'SQLite') {
-            throw new Typecho\Plugin\Exception('暂不支持当前数据库版本' . $type);
-        }
-        $scripts = file_get_contents('usr/plugins/Notice/scripts/' . $type . '.sql');
-        $scripts = str_replace('typecho_', $prefix, $scripts);
-        $scripts = str_replace('%charset%', 'utf8mb4', $scripts);
-        $scripts = explode(';', $scripts);
+        $scripts = DB::get_scripts(true, $db);
         try {
             foreach ($scripts as $script) {
                 $script = trim($script);
@@ -38,20 +29,21 @@ class DB
                     $db->query($script, Typecho\Db::WRITE);
                 }
             }
-            return '数据表新建成功，插件启用成功!';
+            return "数据表新建成功，插件启用成功！";
         } catch (Typecho\Db\Exception $e) {
-            $code = $e->getCode();
-            if (('Mysql' == $type && 1050 == $code) ||
-                ('SQLite' == $type && ('HY000' == $code || 1 == $code))) {
+            $type = DB::get_db_type($db);
+            if (('Mysql' == $type && 1050 == $e->getCode()) ||
+                ('SQLite' == $type && ('HY000' == $e->getCode() || 1 == $e->getCode()))) {
                 try {
-                    $script = `SELECT id, coid, type, log FROM ${prefix}notice`;
+                    $prefix = $db->getPrefix();
+                    $script = sprintf("SELECT id, coid, type, log FROM %snotice", $prefix);
                     $db->query($script, Typecho\Db::READ);
-                    return '数据表已存在，插件启用成功!';
+                    return "数据表已存在，插件启用成功！";
                 } catch (Typecho\Db\Exception $e) {
-                    throw new Typecho\Plugin\Exception('数据表已存在但格式错误，插件启用失败。错误号：' . $e->getCode());
+                    throw new Typecho\Plugin\Exception("数据表已存在但格式错误，插件启用失败。\n错误号：" . $e->getCode() . "\n错误信息：" . $e->getMessage());
                 }
             } else {
-                throw new Typecho\Plugin\Exception('数据表建立失败，插件启用失败。错误号：' . $code);
+                throw new Typecho\Plugin\Exception("数据表建立失败，插件启用失败。\n错误号：" . $e->getCode() . "\n错误信息：" . $e->getMessage());
             }
         }
     }
@@ -68,15 +60,7 @@ class DB
     {
 
         $db = Typecho\Db::get();
-        $prefix = $db->getPrefix();
-        $type = explode('_', $db->getAdapterName());
-        $type = array_pop($type);
-        if ($type != 'Mysql' and $type != 'SQLite') {
-            throw new Typecho\Plugin\Exception('暂不支持当前数据库版本' . $type);
-        }
-        $scripts = file_get_contents('usr/plugins/Notice/scripts/un' . $type . '.sql');
-        $scripts = str_replace('typecho_', $prefix, $scripts);
-        $scripts = explode(';', $scripts);
+        $scripts = self::get_scripts(false, $db);
         try {
             foreach ($scripts as $script) {
                 $script = trim($script);
@@ -84,7 +68,7 @@ class DB
                     $db->query($script, Typecho\Db::WRITE);
                 }
             }
-            return '数据库删除成功!插件卸载成功！';
+            return '数据库删除成功！插件卸载成功！';
         } catch (Typecho\Db\Exception $e) {
             throw new Typecho\Plugin\Exception('数据表删除失败！错误号：' . $e->getCode() . '插件卸载失败！');
         }
@@ -108,5 +92,40 @@ class DB
                 'log' => $log
             ))
         );
+    }
+
+    /**
+     * @access public
+     * @throws Typecho\Plugin\Exception
+     */
+    public static function get_db_type(Typecho\Db $db): string
+    {
+        $type = $db->getAdapterName();
+        if (count(explode("Mysql", $type)) > 1) {
+            $type = "Mysql";
+        } elseif (count(explode("SQLite", $type)) > 1) {
+            $type = "SQLite";
+        } else {
+            throw new Typecho\Plugin\Exception('暂不支持当前数据库版本' . $type);
+        }
+        return $type;
+    }
+
+    /**
+     * @access public
+     * @throws Typecho\Plugin\Exception
+     */
+    public static function get_scripts(bool $install, Typecho\Db $db): array
+    {
+        $prefix = $db->getPrefix();
+        $type = DB::get_db_type($db);
+        if ($install) {
+            $scripts = file_get_contents('usr/plugins/Notice/scripts/' . $type . '.sql');
+        } else {
+            $scripts = file_get_contents('usr/plugins/Notice/scripts/un' . $type . '.sql');
+        }
+        $scripts = str_replace('typecho_', $prefix, $scripts);
+        $scripts = str_replace('%charset%', 'utf8mb4', $scripts);
+        return explode(';', $scripts);
     }
 }

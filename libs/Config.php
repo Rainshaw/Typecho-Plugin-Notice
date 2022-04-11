@@ -195,7 +195,7 @@ EOF;
 
     public static function Setting(Typecho\Widget\Helper\Form $form)
     {
-        $form->addItem(new MDTitle('推送服务配置', '推送服务开关、插件更新提示、数据库配置', false));
+        $form->addItem(new MDTitle('插件配置', '推送服务开关、插件更新提示、数据库配置、日志配置', false));
 
         $setting = new MDCheckbox('setting',
             array(
@@ -213,8 +213,17 @@ EOF;
                 '1' => '是',
                 '0' => '否'
             ), '0', _t('卸载插件时删除数据库'),
-            _t('取消勾选则表示当您禁用此插件时，插件的历史记录仍将存留在数据库中。'));
+            _t('勾选否则表示当您禁用此插件时，插件的历史记录仍将存留在数据库中。'));
         $form->addInput($delDB);
+
+        $enable_log = new MDRadio('enableLog',
+            array(
+                '2' => "调试",
+                '1' => "生产",
+                '0' => '关闭'
+            ), '1', _t('日志级别'),
+            _t('调试方便检查参数配置情况，生产仅记录发信内容，关闭则不会在数据库中存储任何日志。'));
+        $form->addInput($enable_log);
         $form->addItem(new Typecho\Widget\Helper\Layout('/div'));
         $form->addItem(new Typecho\Widget\Helper\Layout('/div'));
     }
@@ -253,12 +262,12 @@ EOF;
     {
         $form->addItem(new MDTitle('Qmsg酱配置', 'QmsgKEY、QmsgQQ、Qmsg酱通知模版', false));
         $QmsgKey = new MDText('QmsgKey', NULL, NULL, _t('QmsgKey'),
-            _t('请进入 <a href="https://qmsg.zendee.cn/api.html">Qmsg酱文档</a> 获取您的 KEY: https://qmsg.zendee.cn:443/send/{QmsgKey}<br>
+            _t('请进入 <a href="https://qmsg.zendee.cn/api">Qmsg酱文档</a> 获取您的 KEY: https://qmsg.zendee.cn:443/send/{QmsgKey}<br>
                 请注意此处只需填写key即可，不要填整个链接！！'));
         $form->addInput($QmsgKey);
 
         $QmsgQQ = new MDText('QmsgQQ', NULL, NULL, _t('QmsgQQ'),
-            _t('请进入 <a href="https://qmsg.zendee.cn/me.html">Qmsg酱</a> 选择机器人QQ号，使用您接收通知的QQ号添加其为好友，并将该QQ号添加到该页面下方QQ号列表中<br/>
+            _t('请进入 <a href="https://qmsg.zendee.cn/user">Qmsg酱</a> 选择机器人QQ号，使用您接收通知的QQ号添加其为好友，并将该QQ号添加到该页面下方QQ号列表中<br/>
                 如果您有多个应用，且在该网站上增加了许多QQ号，您可以在这里填写本站点推送的QQ号（用英文逗号分割，最后不需要加逗号），不填则向该网站列表中所有的QQ号发送消息'));
         $form->addInput($QmsgQQ);
 

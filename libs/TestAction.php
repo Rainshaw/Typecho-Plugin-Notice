@@ -5,10 +5,15 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
 }
 
+require_once "phpmailer/PHPMailer.php";
+require_once "phpmailer/SMTP.php";
+require_once "phpmailer/Exception.php";
+
 use Typecho;
 use Utils;
 use Widget;
-use PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception as PHPMailerException;
 
 use TypechoPlugin\Notice;
 
@@ -229,7 +234,7 @@ class TestAction extends Typecho\Widget implements Widget\ActionInterface
 
     /**
      * @throws Typecho\Db\Exception
-     * @throws Typecho\Widget\Exception
+     * @throws Typecho\Widget\Exception|Typecho\Plugin\Exception
      */
     public function sendTestServerchan()
     {
@@ -266,7 +271,7 @@ class TestAction extends Typecho\Widget implements Widget\ActionInterface
 
     /**
      * @throws Typecho\Db\Exception
-     * @throws Typecho\Widget\Exception
+     * @throws Typecho\Widget\Exception|Typecho\Plugin\Exception
      */
     public function sendTestQmsgchan()
     {
@@ -302,7 +307,7 @@ class TestAction extends Typecho\Widget implements Widget\ActionInterface
         Notice\libs\DB::log('0', 'qq', "测试\n" . $result . "\n\n" . $msg);
         $result = json_decode($result, true);
         /** 提示信息 */
-        $this->widget('Widget_Notice')->set(true === $result['success'] ? _t('发送成功') : _t('发送失败：' . $result),
+        $this->widget('Widget_Notice')->set(true === $result['success'] ? _t('发送成功') : _t('发送失败：' . $result["reason"]),
             true === $result['success'] ? 'success' : 'notice');
 
         /** 转向原页 */
@@ -310,9 +315,9 @@ class TestAction extends Typecho\Widget implements Widget\ActionInterface
     }
 
     /**
-     * @throws PHPMailer\Exception
+     * @throws PHPMailerException
      * @throws Typecho\Db\Exception
-     * @throws Typecho\Widget\Exception
+     * @throws Typecho\Widget\Exception|Typecho\Plugin\Exception
      */
     public function sendTestMail()
     {
@@ -321,7 +326,7 @@ class TestAction extends Typecho\Widget implements Widget\ActionInterface
         }
         $msg = self::replace('mail');
 
-        $mail = new PHPMailer\PHPMailer(false);
+        $mail = new PHPMailer(false);
         $mail->isSMTP();
         $mail->Host = $this->_pluginOption->host;
         $mail->SMTPAuth = !!$this->_pluginOption->auth;
@@ -407,7 +412,7 @@ class TestAction extends Typecho\Widget implements Widget\ActionInterface
     }
 
     /**
-     * @throws PHPMailer\Exception
+     * @throws PHPMailerException
      * @throws Typecho\Db\Exception
      * @throws Typecho\Widget\Exception
      * @throws Typecho\Plugin\Exception

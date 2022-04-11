@@ -9,12 +9,16 @@ require_once "libs/Config.php";
 require_once "libs/db.php";
 require_once "libs/Utils.php";
 require_once "libs/FormElement/MDFormElements.php";
+require_once "libs/phpmailer/PHPMailer.php";
+require_once "libs/phpmailer/Exception.php";
+require_once "libs/phpmailer/SMTP.php";
 
 use Typecho;
 use Typecho\Plugin\PluginInterface;
 use Utils;
 use Widget;
-use PHPMailer;
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception as PHPMailerException;
 
 const __TYPECHO_PLUGIN_NOTICE_VERSION__ = '1.0.0';
 
@@ -71,14 +75,14 @@ class Plugin implements PluginInterface
                 </div>';
 
         // 通知触发函数
-        Typecho\Plugin::factory('Widget\Feedback')->finishComment = __CLASS__ . '::requestService';
-        Typecho\Plugin::factory('Widget\Comments\Edit')->finishComment = __CLASS__ . '::requestService';
-        Typecho\Plugin::factory('Widget\Comments\Edit')->mark = __CLASS__ . '::approvedMail';
+        Typecho\Plugin::factory('Widget_Feedback')->finishComment = __CLASS__ . '::requestService';
+        Typecho\Plugin::factory('Widget_Comments_Edit')->finishComment = __CLASS__ . '::requestService';
+        Typecho\Plugin::factory('Widget_Comments_Edit')->mark = __CLASS__ . '::approvedMail';
         // 注册异步调用函数
-        Typecho\Plugin::factory('Widget\Service')->sendSC = __CLASS__ . '::sendSC';
-        Typecho\Plugin::factory('Widget\Service')->sendQmsg = __CLASS__ . '::sendQmsg';
-        Typecho\Plugin::factory('Widget\Service')->sendMail = __CLASS__ . '::sendMail';
-        Typecho\Plugin::factory('Widget\Service')->sendApprovedMail = __CLASS__ . '::sendApprovedMail';
+        Typecho\Plugin::factory('Widget_Service')->sendSC = __CLASS__ . '::sendSC';
+        Typecho\Plugin::factory('Widget_Service')->sendQmsg = __CLASS__ . '::sendQmsg';
+        Typecho\Plugin::factory('Widget_Service')->sendMail = __CLASS__ . '::sendMail';
+        Typecho\Plugin::factory('Widget_Service')->sendApprovedMail = __CLASS__ . '::sendApprovedMail';
 
         Utils\Helper::addAction(self::$action_setting, 'TypechoPlugin\Notice\libs\SettingAction');
         Utils\Helper::addAction(self::$action_test, 'TypechoPlugin\Notice\libs\TestAction');
@@ -203,24 +207,21 @@ class Plugin implements PluginInterface
      */
     public static function requestService($comment)
     {
-        libs\DB::log($comment->coid, '评论异步请求开始', '');
+        libs\DB::log($comment->coid, 'log', '评论异步请求开始');
         $options = Utils\Helper::options()->plugin('Notice');
         if (in_array('mail', $options->setting) && !empty($options->host)) {
-            libs\DB::log($comment->coid, '发送邮件开始', '');
+            libs\DB::log($comment->coid, "log", "调用发送邮件异步");
             Utils\Helper::requestService('sendMail', $comment->coid);
-            libs\DB::log($comment->coid, '发送邮件结束', '');
         }
         if (in_array('serverchan', $options->setting) && !empty($options->scKey)) {
-            libs\DB::log($comment->coid, 'Server酱通知开始', '');
+            libs\DB::log($comment->coid, "log", "调用Server酱异步");
             Utils\Helper::requestService('sendSC', $comment->coid);
-            libs\DB::log($comment->coid, 'Server酱通知结束', '');
         }
         if (in_array('qmsg', $options->setting) && !empty($options->QmsgKey)) {
-            libs\DB::log($comment->coid, 'Qmsg酱通知开始', '');
+            libs\DB::log($comment->coid, "log", "调用Qmsg酱异步");
             Utils\Helper::requestService('sendQmsg', $comment->coid);
-            libs\DB::log($comment->coid, 'Qmsg酱通知结束', '');
         }
-        libs\DB::log($comment->coid, '评论异步请求结束', '');
+        libs\DB::log($comment->coid, 'log', '评论异步请求结束');
     }
 
     /**
@@ -253,24 +254,28 @@ class Plugin implements PluginInterface
      */
     public static function sendSC(int $coid)
     {
+        libs\DB::log($coid, 'log', 'Server酱通知开始');
         $options = Utils\Helper::options();
         $pluginOptions = $options->plugin('Notice');
         $comment = Utils\Helper::widgetById('comments', $coid);
         if (empty($pluginOptions->scKey)) {
+            libs\DB::log($coid, 'log', 'Server酱缺少sckey');
             return;
         }
         $key = $pluginOptions->scKey;
         if (!$comment->have() || empty($comment->mail)) {
+            libs\DB::log($coid, 'log', 'Server酱评论缺少关键信息');
             return;
         }
         if ($comment->authorId == 1) {
+            libs\DB::log($coid, 'log', 'Server酱博主评论，跳过');
             return;
         }
 
         $msg = $pluginOptions->scMsg;
         $msg = libs\ShortCut::replace($msg, $coid);
 
-        $postdata = http_build_query(
+        $post_data = http_build_query(
             array(
                 'text' => "有人在您的博客发表了评论",
                 'desp' => $msg
@@ -281,13 +286,14 @@ class Plugin implements PluginInterface
             array(
                 'method' => 'POST',
                 'header' => 'Content-type: application/x-www-form-urlencoded',
-                'content' => $postdata
+                'content' => $post_data
             )
         );
         $context = stream_context_create($opts);
         $result = file_get_contents('https://sctapi.ftqq.com/' . $key . '.send', false, $context);
 
         libs\DB::log($coid, 'wechat', $result . "\n\n" . $msg);
+        libs\DB::log($coid, 'log', 'Server酱通知结束');
     }
 
     /**
@@ -301,17 +307,21 @@ class Plugin implements PluginInterface
      */
     public static function sendQmsg(int $coid)
     {
+        libs\DB::log($coid, 'log', 'Qmsg酱通知开始');
         $options = Utils\Helper::options();
         $pluginOptions = $options->plugin('Notice');
         $comment = Utils\Helper::widgetById('comments', $coid);
         if (empty($pluginOptions->QmsgKey)) {
+            libs\DB::log($coid, 'log', 'Qmsg酱评论缺少qmsgkey');
             return;
         }
         $key = $pluginOptions->QmsgKey;
         if (!$comment->have() || empty($comment->mail)) {
+            libs\DB::log($coid, 'log', "Qmsg酱评论缺少关键信息");
             return;
         }
         if ($comment->authorId == 1) {
+            libs\DB::log($coid, 'log', "Qmsg酱博主评论，跳过");
             return;
         }
 
@@ -344,12 +354,13 @@ class Plugin implements PluginInterface
         $result = file_get_contents('https://qmsg.zendee.cn/send/' . $key, false, $context);
 
         libs\DB::log($coid, 'qq', $result . "\n\n" . $msg);
+        libs\DB::log($coid, 'log', 'Qmsg酱通知结束');
     }
 
     /**
-     * @throws PHPMailer\PHPMailer\Exception
+     * @throws PHPMailerException
      */
-    public static function checkMailConfig($pluginOptions, $comment): ?PHPMailer\PHPMailer\PHPMailer
+    public static function checkMailConfig($pluginOptions, $comment): ?PHPMailer
     {
         if (!in_array('mail', $pluginOptions->setting)) {
             return null;
@@ -363,7 +374,7 @@ class Plugin implements PluginInterface
             return null;
         }
 
-        $mail = new PHPMailer\PHPMailer\PHPMailer(false);
+        $mail = new PHPMailer(false);
 
         $mail->isSMTP();
         $mail->Host = $pluginOptions->host;
@@ -387,24 +398,28 @@ class Plugin implements PluginInterface
      * @return void
      * @throws Typecho\Plugin\Exception
      * @throws Typecho\Widget\Exception
-     * @throws PHPMailer\PHPMailer\Exception
+     * @throws PHPMailerException
      * @throws Typecho\Db\Exception
      */
     public static function sendMail(int $coid)
     {
+        libs\DB::log($coid, 'log', '发送邮件开始');
         $pluginOptions = Utils\Helper::options()->plugin('Notice');
         $comment = Utils\Helper::widgetById('comments', $coid);
         assert($comment instanceof Widget\Base\Comments);
 
         $mail = self::checkMailConfig($pluginOptions, $comment);
         if ($mail == null) {
+            libs\DB::log($coid, 'log', '邮件初始化异常，请检查插件配置');
             return;
         }
 
 
         if (0 == $comment->parent) {
             // 某文章或页面的新评论，向博主发信
+            libs\DB::log($coid, 'log', '邮件新评论');
             if ($comment->ownerId != $comment->authorId) {
+                libs\DB::log($coid, 'log', '邮件向博主发信');
                 // 如果评论者不是文章作者自身，则发信
                 $post = Utils\Helper::widgetById('contents', $comment->cid);
                 $mail->addAddress($post->author->mail, $post->author->name);
@@ -420,8 +435,10 @@ class Plugin implements PluginInterface
                 libs\DB::log($coid, 'mail', $mail->Body);
             }
         } else {
+            libs\DB::log($coid, 'log', '邮件子评论');
             // 某评论有新的子评论，向父评论发信
             if ('approved' == $comment->status) {
+                libs\DB::log($coid, 'log', '邮件子评论，向父评论发信');
                 // 如果评论者之前有通过审核的评论，该评论会直接通过审核，则向父评论及文章作者发信
                 $parent = Utils\Helper::widgetById('comments', $comment->parent);
                 assert($parent instanceof Widget\Base\Comments);
@@ -434,6 +451,7 @@ class Plugin implements PluginInterface
                 }
                 $mail->Subject = libs\ShortCut::replace($pluginOptions->titleForGuest, $coid);
             } elseif ($comment->status == "waiting") {
+                libs\DB::log($coid, 'log', '邮件子评论，向博主发信待审核');
                 // 评论没有被标记为通过审核，向博主发送评论通知
                 $owner = Utils\Helper::widgetById("users", $comment->ownerId);
                 assert($owner instanceof Widget\Base\Users);
@@ -451,6 +469,7 @@ class Plugin implements PluginInterface
             $mail->send();
             libs\DB::log($coid, 'mail', $mail->Body);
         }
+        libs\DB::log($coid, 'log', '发送邮件结束');
     }
 
     /**
@@ -461,20 +480,23 @@ class Plugin implements PluginInterface
      * @return void
      * @throws Typecho\Plugin\Exception
      * @throws Typecho\Widget\Exception
-     * @throws PHPMailer\PHPMailer\Exception
+     * @throws PHPMailerException
      * @throws Typecho\Db\Exception
      */
     public static function sendApprovedMail(int $coid)
     {
+        libs\DB::log($coid, 'log', '邮件评论审核通过开始');
         $pluginOptions = Utils\Helper::options()->plugin('Notice');
         $comment = Utils\Helper::widgetById('comments', $coid);
         assert($comment instanceof Widget\Base\Comments);
 
         $mail = self::checkMailConfig($pluginOptions, $comment);
         if ($mail == null) {
+            libs\DB::log($coid, 'log', '邮件评论审核通过，缺少关键参数，请检查插件配置');
             return;
         }
         // 向评论者发送审核通过邮件
+        libs\DB::log($coid, 'log', "邮件评论审核通过向评论者发信");
         $mail->addAddress($comment->mail, $comment->author);
         $mail->Subject = libs\ShortCut::replace($pluginOptions->titleForApproved, $coid);
         $mail->Body = libs\ShortCut::replace(libs\ShortCut::getTemplate('approved'), $coid);
@@ -484,7 +506,8 @@ class Plugin implements PluginInterface
 
 
         // 向父评论发送通知邮件
-        if ($comment->parent != 0){
+        if ($comment->parent != 0 && $comment->parent->authorId != 1){
+            libs\DB::log($coid, 'log', "邮件评论审核通过向父评论发信");
             $mail->clearAddresses();
             $parent = Utils\Helper::widgetById('comments', $comment->parent);
             assert($parent instanceof Widget\Base\Comments);
@@ -500,5 +523,6 @@ class Plugin implements PluginInterface
             $mail->send();
             libs\DB::log($coid, 'mail', $mail->Body);
         }
+        libs\DB::log($coid, "log", "邮件评论审核通过结束");
     }
 }

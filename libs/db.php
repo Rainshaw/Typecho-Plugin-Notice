@@ -7,6 +7,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
 }
 
 use Typecho;
+use Utils;
 
 class DB
 {
@@ -58,7 +59,6 @@ class DB
      */
     public static function dbUninstall(): string
     {
-
         $db = Typecho\Db::get();
         $scripts = self::get_scripts(false, $db);
         try {
@@ -79,9 +79,20 @@ class DB
      * @param string $type wechat为server酱，mail为邮件
      * @param string $log 日志
      * @throws Typecho\Db\Exception
+     * @throws Typecho\Plugin\Exception
      */
     public static function log(int $coid, string $type, string $log)
     {
+        $pluginOption = Utils\Helper::options()->plugin('Notice');
+        switch ($pluginOption->enableLog){
+            case "0":
+                return;
+            case "1":
+                if ($type == "log"){
+                    return;
+                }
+            case "2":
+        }
         $db = Typecho\Db::get();
         $prefix = $db->getPrefix();
 

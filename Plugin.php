@@ -20,14 +20,14 @@ use Widget;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception as PHPMailerException;
 
-const __TYPECHO_PLUGIN_NOTICE_VERSION__ = '1.0.1';
+const __TYPECHO_PLUGIN_NOTICE_VERSION__ = '1.0.2';
 
 /**
  * <strong style="color:#28B7FF;font-family: 楷体;">评论通知</strong>
  *
  * @package Notice
  * @author <strong style="color:#28B7FF;font-family: 楷体;">Rainshaw</strong>
- * @version 1.0.0
+ * @version 1.0.2
  * @link https://github.com/RainshawGao
  * @since 1.2.0
  */
@@ -254,21 +254,21 @@ class Plugin implements PluginInterface
      */
     public static function sendSC(int $coid)
     {
-        libs\DB::log($coid, 'log', 'Server酱通知开始');
+        libs\DB::log($coid, 'log', 'Server酱：通知开始');
         $options = Utils\Helper::options();
         $pluginOptions = $options->plugin('Notice');
         $comment = Utils\Helper::widgetById('comments', $coid);
         if (empty($pluginOptions->scKey)) {
-            libs\DB::log($coid, 'log', 'Server酱缺少sckey');
+            libs\DB::log($coid, 'log', 'Server酱：缺少sckey');
             return;
         }
         $key = $pluginOptions->scKey;
         if (!$comment->have() || empty($comment->mail)) {
-            libs\DB::log($coid, 'log', 'Server酱评论缺少关键信息');
+            libs\DB::log($coid, 'log', 'Server酱：评论缺少关键信息');
             return;
         }
         if ($comment->authorId == 1) {
-            libs\DB::log($coid, 'log', 'Server酱博主评论，跳过');
+            libs\DB::log($coid, 'log', 'Server酱：博主评论，跳过');
             return;
         }
 
@@ -293,7 +293,7 @@ class Plugin implements PluginInterface
         $result = file_get_contents('https://sctapi.ftqq.com/' . $key . '.send', false, $context);
 
         libs\DB::log($coid, 'wechat', $result . "\n\n" . $msg);
-        libs\DB::log($coid, 'log', 'Server酱通知结束');
+        libs\DB::log($coid, 'log', 'Server酱：通知结束');
     }
 
     /**
@@ -307,21 +307,21 @@ class Plugin implements PluginInterface
      */
     public static function sendQmsg(int $coid)
     {
-        libs\DB::log($coid, 'log', 'Qmsg酱通知开始');
+        libs\DB::log($coid, 'log', 'Qmsg酱：通知开始');
         $options = Utils\Helper::options();
         $pluginOptions = $options->plugin('Notice');
         $comment = Utils\Helper::widgetById('comments', $coid);
         if (empty($pluginOptions->QmsgKey)) {
-            libs\DB::log($coid, 'log', 'Qmsg酱评论缺少qmsgkey');
+            libs\DB::log($coid, 'log', 'Qmsg酱：评论缺少qmsgkey');
             return;
         }
         $key = $pluginOptions->QmsgKey;
         if (!$comment->have() || empty($comment->mail)) {
-            libs\DB::log($coid, 'log', "Qmsg酱评论缺少关键信息");
+            libs\DB::log($coid, 'log', "Qmsg酱：评论缺少关键信息");
             return;
         }
         if ($comment->authorId == 1) {
-            libs\DB::log($coid, 'log', "Qmsg酱博主评论，跳过");
+            libs\DB::log($coid, 'log', "Qmsg酱：博主评论，跳过");
             return;
         }
 
@@ -354,7 +354,7 @@ class Plugin implements PluginInterface
         $result = file_get_contents('https://qmsg.zendee.cn/send/' . $key, false, $context);
 
         libs\DB::log($coid, 'qq', $result . "\n\n" . $msg);
-        libs\DB::log($coid, 'log', 'Qmsg酱通知结束');
+        libs\DB::log($coid, 'log', 'Qmsg酱：通知结束');
     }
 
     /**
@@ -403,29 +403,29 @@ class Plugin implements PluginInterface
      */
     public static function sendMail(int $coid)
     {
-        libs\DB::log($coid, 'log', '发送邮件开始');
+        libs\DB::log($coid, 'log', '邮件：发送开始');
         $pluginOptions = Utils\Helper::options()->plugin('Notice');
         $comment = Utils\Helper::widgetById('comments', $coid);
         assert($comment instanceof Widget\Base\Comments);
 
         $mail = self::checkMailConfig($pluginOptions, $comment);
         if ($mail == null) {
-            libs\DB::log($coid, 'log', '邮件初始化异常，请检查插件配置');
+            libs\DB::log($coid, 'log', '邮件：初始化异常，请检查插件配置');
             return;
         }
 
-
         if (0 == $comment->parent) {
             // 某文章或页面的新评论，向博主发信
-            libs\DB::log($coid, 'log', '邮件新评论');
+            libs\DB::log($coid, 'log', '邮件：新评论');
             if ($comment->ownerId != $comment->authorId) {
-                libs\DB::log($coid, 'log', '邮件向博主发信');
+                libs\DB::log($coid, 'log', '邮件：新评论：向博主发信');
                 // 如果评论者不是文章作者自身，则发信
                 $post = Utils\Helper::widgetById('contents', $comment->cid);
+                assert($post instanceof Widget\Base\Contents);
                 $mail->addAddress($post->author->mail, $post->author->name);
                 // 构造邮件
                 $mail->Subject = libs\ShortCut::replace($pluginOptions->titleForOwner, $coid);
-                $mail->Body = libs\ShortCut::replace(libs\ShortCut::getTemplate('owner'), $coid);
+                $mail->Body = libs\ShortCut::replace(libs\ShortCut::getTemplate("owner"), $coid);
                 $mail->AltBody = "作者：" .
                     $comment->author . "\r\n链接：" .
                     $comment->permalink .
@@ -433,43 +433,61 @@ class Plugin implements PluginInterface
                     $comment->text;
                 $mail->send();
                 libs\DB::log($coid, 'mail', $mail->Body);
+            } else {
+                libs\DB::log($coid, 'log', '邮件：新评论：文章作者评论，跳过');
             }
         } else {
-            libs\DB::log($coid, 'log', '邮件子评论');
+            libs\DB::log($coid, 'log', '邮件：子评论');
             // 某评论有新的子评论，向父评论发信
             if ('approved' == $comment->status) {
-                libs\DB::log($coid, 'log', '邮件子评论，向父评论发信');
                 // 如果评论者之前有通过审核的评论，该评论会直接通过审核，则向父评论及文章作者发信
+                libs\DB::log($coid, 'log', '邮件：子评论：通过审核');
                 $parent = Utils\Helper::widgetById('comments', $comment->parent);
                 assert($parent instanceof Widget\Base\Comments);
-                $mail->addAddress($parent->mail, $parent->author);
-                if ($parent->authorId != $parent->ownerId && $comment->authorId != $comment->ownerId) {
-                    // 如果父评论的作者不是文章的作者并且子评论者不是文章作者，同时给文章作者发信
-                    $owner = Utils\Helper::widgetById("users", $comment->ownerId);
-                    assert($owner instanceof Widget\Base\Users);
-                    $mail->addAddress($owner->mail, $owner->name);
+                if ($comment->authorId != $comment->ownerId) {
+                    libs\DB::log($coid, 'log', '邮件：子评论：通过审核：文章作者评论');
+                    if ($parent->authorId == $parent->ownerId) {
+                        libs\DB::log($coid, 'log', '邮件：子评论：通过审核：文章作者评论：父评论作者为文章作者跳过发信');
+                    } else {
+                        libs\DB::log($coid, 'log', '邮件：子评论：通过审核：文章作者评论：给父评论发信');
+                        $mail->addAddress($parent->mail, $parent->author);
+                        $mail->Subject = libs\ShortCut::replace($pluginOptions->titleForGuest, $coid);
+                        $mail->Body = libs\ShortCut::replace(libs\ShortCut::getTemplate('guest'), $coid);
+                    }
+                } else {
+                    libs\DB::log($coid, 'log', '邮件：子评论：通过审核：游客评论');
+                    if ($parent->authorId != $parent->ownerId) {
+                        libs\DB::log($coid, 'log', '邮件：子评论：通过审核：游客评论：父评论作者非文章作者');
+                        $post = Utils\Helper::widgetById('contents', $comment->cid);
+                        assert($post instanceof Widget\Base\Contents);
+                        $mail->addCC($post->author->mail, $post->author->name);
+                    } else {
+                        libs\DB::log($coid, 'log', '邮件：子评论：通过审核：游客评论：父评论作者为文章作者');
+                    }
+                    $mail->addAddress($parent->mail, $parent->author);
+                    $mail->Subject = libs\ShortCut::replace($pluginOptions->titleForGuest, $coid);
                 }
-                $mail->Subject = libs\ShortCut::replace($pluginOptions->titleForGuest, $coid);
             } elseif ($comment->status == "waiting") {
-                libs\DB::log($coid, 'log', '邮件子评论，向博主发信待审核');
-                // 评论没有被标记为通过审核，向博主发送评论通知
+                // 评论标记为待审核，向博主发送评论通知
+                libs\DB::log($coid, 'log', '邮件：子评论：待审核');
                 $owner = Utils\Helper::widgetById("users", $comment->ownerId);
                 assert($owner instanceof Widget\Base\Users);
                 $mail->addAddress($owner->mail, $owner->name);
                 $mail->Subject = libs\ShortCut::replace($pluginOptions->titleForOwner, $coid);
+                $mail->Body = libs\ShortCut::replace(libs\ShortCut::getTemplate('owner'), $coid);
             }
-            // 构造邮件
-            $mail->Body = libs\ShortCut::replace(libs\ShortCut::getTemplate('guest'), $coid);
-            $mail->AltBody = "作者：" .
-                $comment->author .
-                "\r\n链接：" .
-                $comment->permalink .
-                "\r\n评论：\r\n" .
-                $comment->text;
-            $mail->send();
-            libs\DB::log($coid, 'mail', $mail->Body);
+            if (count($mail->getToAddresses()) > 0) {
+                $mail->AltBody = "作者：" .
+                    $comment->author .
+                    "\r\n链接：" .
+                    $comment->permalink .
+                    "\r\n评论：\r\n" .
+                    $comment->text;
+                $mail->send();
+                libs\DB::log($coid, 'mail', $mail->Body);
+            }
         }
-        libs\DB::log($coid, 'log', '发送邮件结束');
+        libs\DB::log($coid, 'log', '邮件：发送结束');
     }
 
     /**
@@ -485,18 +503,18 @@ class Plugin implements PluginInterface
      */
     public static function sendApprovedMail(int $coid)
     {
-        libs\DB::log($coid, 'log', '邮件评论审核通过开始');
+        libs\DB::log($coid, 'log', '邮件：评论审核通过：开始');
         $pluginOptions = Utils\Helper::options()->plugin('Notice');
         $comment = Utils\Helper::widgetById('comments', $coid);
         assert($comment instanceof Widget\Base\Comments);
 
         $mail = self::checkMailConfig($pluginOptions, $comment);
         if ($mail == null) {
-            libs\DB::log($coid, 'log', '邮件评论审核通过，缺少关键参数，请检查插件配置');
+            libs\DB::log($coid, 'log', '邮件：评论审核通过：缺少关键参数，请检查插件配置');
             return;
         }
         // 向评论者发送审核通过邮件
-        libs\DB::log($coid, 'log', "邮件评论审核通过向评论者发信");
+        libs\DB::log($coid, 'log', "邮件：评论审核通过：向评论者发信");
         $mail->addAddress($comment->mail, $comment->author);
         $mail->Subject = libs\ShortCut::replace($pluginOptions->titleForApproved, $coid);
         $mail->Body = libs\ShortCut::replace(libs\ShortCut::getTemplate('approved'), $coid);
@@ -504,25 +522,30 @@ class Plugin implements PluginInterface
         $mail->send();
         libs\DB::log($coid, 'mail', $mail->Body);
 
-
         // 向父评论发送通知邮件
-        if ($comment->parent != 0 && $comment->parent->authorId != 1){
-            libs\DB::log($coid, 'log', "邮件评论审核通过向父评论发信");
-            $mail->clearAddresses();
+        if ($comment->parent != 0) {
+            $mail->clearAllRecipients();
+
+            libs\DB::log($coid, 'log', "邮件：评论审核通过：有父评论");
             $parent = Utils\Helper::widgetById('comments', $comment->parent);
             assert($parent instanceof Widget\Base\Comments);
-            $mail->addAddress($parent->mail, $parent->author);
-            $mail->Subject = libs\ShortCut::replace($pluginOptions->titleForGuest, $coid);
-            $mail->Body = libs\ShortCut::replace(libs\ShortCut::getTemplate('guest'), $coid);
-            $mail->AltBody = "作者：" .
-                $comment->author .
-                "\r\n链接：" .
-                $comment->permalink .
-                "\r\n评论：\r\n" .
-                $comment->text;
-            $mail->send();
-            libs\DB::log($coid, 'mail', $mail->Body);
+            if($parent->ownerId != $parent->authorId){
+                libs\DB::log($coid, 'log', "邮件：评论审核通过：父评论作者非文章作者向父评论发信");
+                $mail->addAddress($parent->mail, $parent->author);
+                $mail->Subject = libs\ShortCut::replace($pluginOptions->titleForGuest, $coid);
+                $mail->Body = libs\ShortCut::replace(libs\ShortCut::getTemplate('guest'), $coid);
+                $mail->AltBody = "作者：" .
+                    $comment->author .
+                    "\r\n链接：" .
+                    $comment->permalink .
+                    "\r\n评论：\r\n" .
+                    $comment->text;
+                $mail->send();
+                libs\DB::log($coid, 'mail', $mail->Body);
+            }else{
+                libs\DB::log($coid, 'log', "邮件：评论审核通过：父评论作者为文章作者跳过发信");
+            }
         }
-        libs\DB::log($coid, "log", "邮件评论审核通过结束");
+        libs\DB::log($coid, "log", "邮件：评论审核通过：结束");
     }
 }

@@ -48,9 +48,18 @@ class ShortCut
         assert($comment instanceof Widget\Base\Comments);
         $date = new Typecho\Date();
         $time = $date->format('Y-m-d H:i:s');
-        $parent = $comment;
         if ($comment->parent) {
             $parent = Utils\Helper::widgetById('comments', $comment->parent);
+            assert($parent instanceof Widget\Base\Comments);
+            # widgetById 返回逻辑会覆盖
+            # https://github.com/typecho/typecho/issues/1412
+            $p_author = $parent->author;
+            $p_text = $parent->text;
+            $comment = Utils\Helper::widgetById('comments', $coid);
+            assert($parent instanceof Widget\Base\Comments);
+        } else {
+            $p_author = "";
+            $p_text = "";
         }
         $status = array(
             "approved" => "通过",
@@ -61,13 +70,13 @@ class ShortCut
             Utils\Helper::options()->title,
             $comment->title,
             $comment->author,
-            $parent->author,
+            $p_author,
             $comment->ip,
             $comment->mail,
             $comment->permalink,
             Utils\Helper::options()->siteUrl . __TYPECHO_ADMIN_DIR__ . "manage-comments.php",
             $comment->text,
-            $parent->text,
+            $p_text,
             $time,
             $status[$comment->status]
         );

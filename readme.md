@@ -1,5 +1,5 @@
 ## 插件简介
-![](https://img.shields.io/badge/Typecho->17.11.15-brightgreen.svg?style=plastic)
+![](https://img.shields.io/badge/Typecho->=1.2.0-brightgreen.svg?style=plastic)
 ![](https://img.shields.io/badge/language-PHP-blue.svg?style=plastic)
 ![](https://visitor-badge.glitch.me/badge?page_id=https://github.com/RainshawGao/Typecho-Plugin-Notice)
 ![](https://img.shields.io/badge/license-GPL_v3-000000.svg?style=plastic)
@@ -27,6 +27,10 @@ Notice 是 Typecho 评论通知插件，支持 SMTP、Server酱、Qmsg酱 两种
 - [ ] 企业微信推送
 - [ ] 钉钉推送
 - [ ] 自定义推送
+
+## 发信逻辑
+
+![](./assets/Notice%20发信逻辑.png)
 
 ## 自定义邮件模板说明
 

@@ -443,8 +443,8 @@ class Plugin implements PluginInterface
                 $parent = Utils\Helper::widgetById('comments', $comment->parent);
                 assert($parent instanceof Widget\Base\Comments);
                 $mail->addAddress($parent->mail, $parent->author);
-                if ($parent->authorId != $parent->ownerId) {
-                    // 如果父评论的作者不是文章的作者，同时给文章作者发信
+                if ($parent->authorId != $parent->ownerId && $comment->authorId != $comment->ownerId) {
+                    // 如果父评论的作者不是文章的作者并且子评论者不是文章作者，同时给文章作者发信
                     $owner = Utils\Helper::widgetById("users", $comment->ownerId);
                     assert($owner instanceof Widget\Base\Users);
                     $mail->addAddress($owner->mail, $owner->name);

@@ -20,7 +20,7 @@ use Widget;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception as PHPMailerException;
 
-const __TYPECHO_PLUGIN_NOTICE_VERSION__ = '1.0.0';
+const __TYPECHO_PLUGIN_NOTICE_VERSION__ = '1.0.1';
 
 /**
  * <strong style="color:#28B7FF;font-family: 楷体;">评论通知</strong>

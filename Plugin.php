@@ -20,14 +20,14 @@ use Widget;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception as PHPMailerException;
 
-const __TYPECHO_PLUGIN_NOTICE_VERSION__ = '1.0.2';
+const __TYPECHO_PLUGIN_NOTICE_VERSION__ = '1.0.3';
 
 /**
  * <strong style="color:#28B7FF;font-family: 楷体;">评论通知</strong>
  *
  * @package Notice
  * @author <strong style="color:#28B7FF;font-family: 楷体;">Rainshaw</strong>
- * @version 1.0.2
+ * @version 1.0.3
  * @link https://github.com/RainshawGao
  * @since 1.2.0
  */
@@ -466,6 +466,7 @@ class Plugin implements PluginInterface
                     }
                     $mail->addAddress($parent->mail, $parent->author);
                     $mail->Subject = libs\ShortCut::replace($pluginOptions->titleForGuest, $coid);
+                    $mail->Body = libs\ShortCut::replace(libs\ShortCut::getTemplate('guest'), $coid);
                 }
             } elseif ($comment->status == "waiting") {
                 // 评论标记为待审核，向博主发送评论通知

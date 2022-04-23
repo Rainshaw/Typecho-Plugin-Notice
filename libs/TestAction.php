@@ -339,7 +339,7 @@ class TestAction extends Typecho\Widget implements Widget\ActionInterface
         $mail->CharSet = 'utf-8';
         $mail->setFrom($this->_pluginOption->from, $this->_pluginOption->from_name);
         var_dump($this->request->get('to'));
-        $mail->addAddress($this->request->get('to'), $this->request->getArray('toName'));
+        $mail->addAddress($this->request->get('to'), $this->request->get('toName'));
         $mail->Body = $msg;
 
 

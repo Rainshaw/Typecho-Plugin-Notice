@@ -48,7 +48,7 @@ class Version
      */
     public static function getNewReleaseFromGithub(): string
     {
-        $ch = curl_init("https://api.github.com/repos/RainshawGao/Typecho-Plugin-Notice/releases/latest");
+        $ch = curl_init("https://api.github.com/repos/Rainshaw/Typecho-Plugin-Notice/releases/latest");
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_USERAGENT, "Typecho-Plugin-Notice");
         $res = curl_exec($ch);

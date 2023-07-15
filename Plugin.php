@@ -28,7 +28,7 @@ const __TYPECHO_PLUGIN_NOTICE_VERSION__ = '1.0.6';
  * @package Notice
  * @author <strong style="color:#28B7FF;font-family: 楷体;">Rainshaw</strong>
  * @version 1.0.6
- * @link https://github.com/RainshawGao
+ * @link https://github.com/Rainshaw
  * @since 1.2.0
  */
 class Plugin implements PluginInterface

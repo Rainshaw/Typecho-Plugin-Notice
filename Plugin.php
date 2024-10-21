@@ -211,15 +211,15 @@ class Plugin implements PluginInterface
         $options = Utils\Helper::options()->plugin('Notice');
         if (in_array('mail', $options->setting) && !empty($options->host)) {
             libs\DB::log($comment->coid, "log", "调用发送邮件异步");
-            Utils\Helper::requestService('sendMail', $comment->coid);
+            self::sendMail($comment->coid);
         }
         if (in_array('serverchan', $options->setting) && !empty($options->scKey)) {
             libs\DB::log($comment->coid, "log", "调用Server酱异步");
-            Utils\Helper::requestService('sendSC', $comment->coid);
+            self::sendSC($comment->coid);
         }
         if (in_array('qmsg', $options->setting) && !empty($options->QmsgKey)) {
             libs\DB::log($comment->coid, "log", "调用Qmsg酱异步");
-            Utils\Helper::requestService('sendQmsg', $comment->coid);
+            self::sendQmsg($comment->coid);
         }
         libs\DB::log($comment->coid, 'log', '评论异步请求结束');
     }
@@ -238,7 +238,7 @@ class Plugin implements PluginInterface
     {
         libs\DB::log($comment['coid'], '评论通过异步请求开始', '');
         if ('approved' === $status) {
-            Utils\Helper::requestService('sendApprovedMail', $comment['coid']);
+            self::sendApprovedMail($comment['coid']);
         }
         libs\DB::log($comment['coid'], '评论通过异步请求结束', '');
     }
